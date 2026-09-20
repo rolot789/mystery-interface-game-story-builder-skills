@@ -1,0 +1,275 @@
+{
+  "template_version": "1.0.0",
+  "pages": {
+    "workshop": "워크숍 · 다음 결정",
+    "world": "세계관 · 조직과 서비스",
+    "characters": "인물 · 관계와 지식",
+    "truth": "사건 · 실제 진상",
+    "investigation": "조사 · 선택과 결말",
+    "design": "최종 기획서",
+    "management": "관리 데이터",
+    "registry": "동기화 상태"
+  },
+  "databases": {
+    "versions": {
+      "title": "Story Versions",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Version ID": "RICH_TEXT",
+        "Status": "SELECT('ACTIVE':green, 'ALTERNATIVE':yellow, 'ARCHIVED':gray)",
+        "Current Revision": "NUMBER",
+        "Parent Version ID": "RICH_TEXT"
+      },
+      "relations": {}
+    },
+    "entities": {
+      "title": "Canon Entities",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Entity ID": "RICH_TEXT",
+        "Kind": "SELECT('WorldRule', 'Organization', 'Service', 'Character', 'Event', 'Fact', 'Claim', 'Knowledge', 'Trace', 'Choice', 'Ending')",
+        "Canon": "SELECT('DRAFT':gray, 'PROPOSED':yellow, 'CONFIRMED':green, 'SUPERSEDED':brown, 'REJECTED':red)",
+        "Review": "SELECT('NOT_CHECKED':gray, 'VALID':green, 'NEEDS_REVIEW':yellow, 'BLOCKED':red)",
+        "Owner": "RICH_TEXT",
+        "Summary": "RICH_TEXT",
+        "Event Time": "DATE"
+      },
+      "relations": {
+        "Version": "versions"
+      }
+    },
+    "links": {
+      "title": "Canon Links",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Relation": "SELECT('supports','contradicts','generates','knows','depends_on','related')",
+        "Reason": "RICH_TEXT"
+      },
+      "relations": {
+        "Version": "versions",
+        "Source": "entities",
+        "Target": "entities"
+      }
+    },
+    "decisions": {
+      "title": "Decision Log",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Status": "SELECT('DRAFT':gray, 'PROPOSED':yellow, 'CONFIRMED':green, 'SUPERSEDED':brown, 'REJECTED':red)",
+        "Question": "RICH_TEXT",
+        "Answer": "RICH_TEXT",
+        "Rationale": "RICH_TEXT"
+      },
+      "relations": {
+        "Version": "versions",
+        "Affected": "entities"
+      }
+    },
+    "issues": {
+      "title": "QA Issues",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Severity": "SELECT('BLOCKER':red, 'MAJOR':orange, 'MINOR':gray)",
+        "Status": "SELECT('OPEN':red, 'RESOLVED':green, 'ACCEPTED':yellow)"
+      },
+      "relations": {
+        "Version": "versions",
+        "Affected": "entities"
+      }
+    },
+    "sessions": {
+      "title": "Workshop Sessions",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Phase": "RICH_TEXT",
+        "Next Question": "RICH_TEXT",
+        "Sync": "SELECT('LOCAL_DRAFT':gray, 'PENDING_SYNC':yellow, 'SYNCED':green, 'SYNC_FAILED':red)"
+      },
+      "relations": {
+        "Version": "versions"
+      }
+    },
+    "changes": {
+      "title": "Change Sets",
+      "properties": {
+        "Name": "TITLE",
+        "Key": "RICH_TEXT",
+        "Revision": "NUMBER",
+        "Content Hash": "RICH_TEXT",
+        "Updated": "LAST_EDITED_TIME",
+        "Base Revision": "NUMBER",
+        "Target Revision": "NUMBER",
+        "Status": "SELECT('PREPARED':gray, 'APPLYING':yellow, 'PARTIAL':orange, 'COMMITTED':green, 'CONFLICT':red)"
+      },
+      "relations": {
+        "Version": "versions",
+        "Affected": "entities"
+      }
+    }
+  },
+  "views": [
+    {
+      "key": "world_entities",
+      "page": "world",
+      "database": "entities",
+      "name": "설정 목록",
+      "type": "table",
+      "filter": "\"Kind\" IN (\"WorldRule\", \"Organization\", \"Service\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Kind",
+        "Canon",
+        "Review",
+        "Summary"
+      ]
+    },
+    {
+      "key": "characters_entities",
+      "page": "characters",
+      "database": "entities",
+      "name": "설정 목록",
+      "type": "table",
+      "filter": "\"Kind\" IN (\"Character\", \"Knowledge\", \"Claim\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Kind",
+        "Canon",
+        "Review",
+        "Summary"
+      ]
+    },
+    {
+      "key": "truth_entities",
+      "page": "truth",
+      "database": "entities",
+      "name": "설정 목록",
+      "type": "table",
+      "filter": "\"Kind\" IN (\"Event\", \"Fact\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Kind",
+        "Canon",
+        "Review",
+        "Summary"
+      ]
+    },
+    {
+      "key": "investigation_entities",
+      "page": "investigation",
+      "database": "entities",
+      "name": "설정 목록",
+      "type": "table",
+      "filter": "\"Kind\" IN (\"Trace\", \"Choice\", \"Ending\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Kind",
+        "Canon",
+        "Review",
+        "Summary"
+      ]
+    },
+    {
+      "key": "decisions",
+      "page": "workshop",
+      "database": "decisions",
+      "name": "결정 이력",
+      "type": "table",
+      "show": [
+        "Name",
+        "Status",
+        "Question",
+        "Answer"
+      ]
+    },
+    {
+      "key": "open_issues",
+      "page": "workshop",
+      "database": "issues",
+      "name": "열린 검토 항목",
+      "type": "table",
+      "filter": "\"Status\" = \"OPEN\"",
+      "show": [
+        "Name",
+        "Severity",
+        "Status"
+      ]
+    },
+    {
+      "key": "sessions",
+      "page": "workshop",
+      "database": "sessions",
+      "name": "대화 재개",
+      "type": "table",
+      "show": [
+        "Name",
+        "Phase",
+        "Next Question",
+        "Sync"
+      ]
+    },
+    {
+      "key": "evidence",
+      "page": "investigation",
+      "database": "links",
+      "name": "근거와 의존 관계",
+      "type": "table",
+      "show": [
+        "Name",
+        "Relation",
+        "Source",
+        "Target",
+        "Reason"
+      ]
+    },
+    {
+      "key": "changes",
+      "page": "registry",
+      "database": "changes",
+      "name": "변경 묶음",
+      "type": "table",
+      "show": [
+        "Name",
+        "Base Revision",
+        "Target Revision",
+        "Status"
+      ]
+    },
+    {
+      "key": "versions",
+      "page": "management",
+      "database": "versions",
+      "name": "스토리 버전",
+      "type": "table",
+      "show": [
+        "Name",
+        "Version ID",
+        "Status",
+        "Current Revision"
+      ]
+    }
+  ]
+}

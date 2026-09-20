@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mystery Production Orchestrator"
+  short_description: "독립 미스터리 세계관과 사건을 대화로 완성하는 제작 진행자"
+  default_prompt: "$mystery-production-orchestrator 짧은 아이디어에서 시작해 독립 세계관과 분기 결말을 갖춘 기획서를 만들자."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Character Knowledge Builder"
+  short_description: "인물의 일상·동기·관계와 시점별 지식·주장을 일관되게 설계한다"
+  default_prompt: "$character-knowledge-builder 현재 미스터리 프로젝트에서 담당 영역을 설계하고 기록해줘."

@@ -1,0 +1,16 @@
+{
+  "name": "mystery-interface-game-story-builder-skills",
+  "version": "1.0.0",
+  "entrypoint": "mystery-production-orchestrator",
+  "skills": [
+    "mystery-production-orchestrator",
+    "mystery-plot-builder",
+    "mystery-world-builder",
+    "character-knowledge-builder",
+    "mystery-continuity-auditor",
+    "notion-canon-manager"
+  ],
+  "notion_template_version": "1.0.0",
+  "runtime": "Python 3 standard library; agent executes Notion MCP requests",
+  "scope": "independent-world story planning through final design document"
+}

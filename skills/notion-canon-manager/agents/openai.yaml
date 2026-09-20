@@ -1,0 +1,4 @@
+interface:
+  display_name: "Notion Canon Manager"
+  short_description: "게임별 Notion 템플릿을 구성하고 설정·결정·기획서를 동기화한다"
+  default_prompt: "$notion-canon-manager 현재 미스터리 프로젝트에서 담당 영역을 설계하고 기록해줘."

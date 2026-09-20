@@ -1,0 +1,13 @@
+name: Validate skills
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate skill package
+        run: python3 scripts/validate_suite.py
+      - name: Test Canon and Notion request planning
+        run: python3 -m unittest discover -s tests -v
