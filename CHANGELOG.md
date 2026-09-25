@@ -1,5 +1,35 @@
 # 변경 내역
 
+## 1.2.0 — 2026-09-25
+
+Canon 내용을 Notion 작업 페이지에 자동으로 반영한다. Notion 템플릿 1.2.0은 작업 페이지의 구성을 새로 정했다.
+
+### 페이지 구성
+
+- **영역 순서.** Hub와 5개 작업 페이지(워크숍·세계관·인물·사건·조사)는 같은 순서의 영역을 갖는다: 안내 callout → `## 해설`(AI 서술) → `## Canon 요약`(자동 생성) → `## User Notes`(사람) → `## 데이터 뷰`(Hub는 `## 작업 페이지`).
+- **순서의 이유.** create_view와 create_pages가 뷰와 하위 페이지를 맨 끝에 붙이기 때문에, 그것들을 받는 제목을 맨 뒤에 둔다. 자동 영역은 User Notes 앞에서 끝나므로, 자동 갱신이 메모·뷰·하위 페이지를 건드리지 않는다.
+- **페이지별 자동 요약.**
+  - Hub: 진행 현황
+  - 워크숍: 미정 결정, 열린 이슈, 자동 검사 결과
+  - 세계관: 세계 바이블
+  - 인물: 인물, 시점별 지식, 발언
+  - 사건: 사건 시간선, 사실, 이용한 허점
+  - 조사: 기록, 근거, 공정성 노출, 선택, 결말
+
+### 도구
+
+- **`notion_plan.py pages`.** 영역 제목을 경계로 해설·Canon 요약 영역만 좁게 교체하는 update_content 요청을 만든다.
+  - 영역마다 지문을 Registry의 page_regions에 기록한다.
+  - 사람이 영역을 고쳤으면 덮어쓰지 않고 conflicts로 보고한다.
+  - 지문은 Notion이 저장할 때 바꾸는 공백·빈 줄·이스케이프·표 표기를 뺀 글자만 비교한다.
+  - 1.1.0 페이지에는 요약 영역을 User Notes 앞에 추가한다.
+- **`canon.py page`.** 페이지 요약을 Notion 문법(`<table>` 표, 탭 들여쓰기, 특수문자 이스케이프)으로 미리 보여 준다. Notion은 `|` 마크다운 표를 지원하지 않아서 별도 렌더러를 만들었다.
+- **`canon_views`.** 문서 모델 하나를 GitHub Markdown(bible·timeline)과 Notion 문법 두 가지로 렌더링한다.
+
+### 수정
+
+- **template_version 확인.** upsert가 Registry의 template_version을 확인하지 않아, 1.0.0 템플릿의 Notion에 schema v2 객체를 쓰는 요청을 만들던 문제. 이제 1.1.0 미만이면 요청을 만들지 않는다.
+
 ## 1.1.0 — 2026-09-25
 
 세계관을 세밀하되 모순 없이 설계하도록 World Builder를 다시 쓰고, 이를 받치는 Canon schema v2와 자동 검사를 추가했다. 분석과 계획은 [docs/improvement-plan.md](docs/improvement-plan.md)에 있다.

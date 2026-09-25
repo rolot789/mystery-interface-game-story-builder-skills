@@ -22,7 +22,8 @@
 > - Phase 5: 완료.
 >   - 행동 평가 시나리오 11개를 추가했다. 8개는 정답 규칙을 테스트가 확인한다.
 >   - CHANGELOG를 추가하고 버전을 1.1.0으로 올렸다.
->   - README를 정리했다. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
+>   - README를 정리했다.
+> - 후속(1.2.0): Notion 작업 페이지 구성과 자동 반영(`notion_plan.py pages`)을 추가했다. 1.1.0 이후 남은 개선 목록 중 세계 바이블 → Notion 반영 항목이다. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
 
 ---
 

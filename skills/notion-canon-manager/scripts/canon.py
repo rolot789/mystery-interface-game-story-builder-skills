@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import canon_rules as rules
+import canon_views
 
 WORLD_KINDS = {'WorldRule', 'Organization', 'Service', 'Location', 'HistoryEvent', 'Term'}
 V2_KINDS = {'Location', 'HistoryEvent', 'Term'}
@@ -553,7 +554,6 @@ def checked(s):
 
 def main():
     import canon_migrate
-    import canon_views
     p = argparse.ArgumentParser(description=__doc__)
     sp = p.add_subparsers(dest='cmd', required=True)
     n = sp.add_parser('new')
@@ -561,7 +561,7 @@ def main():
     n.add_argument('--version-id', required=True)
     n.add_argument('--title', required=True)
     n.add_argument('--output', required=True)
-    for name in ['validate', 'impact', 'render', 'migrate', 'bible', 'timeline']:
+    for name in ['validate', 'impact', 'render', 'migrate', 'bible', 'timeline', 'page']:
         q = sp.add_parser(name)
         q.add_argument('snapshot')
         if name == 'validate':
@@ -574,6 +574,8 @@ def main():
             q.add_argument('--output', required=True)
         if name == 'timeline':
             q.add_argument('--character')
+        if name == 'page':
+            q.add_argument('page', choices=canon_views.PAGES)
     a = p.parse_args()
     if a.cmd == 'new':
         with open(a.output, 'x') as f:
@@ -603,6 +605,8 @@ def main():
         print(canon_views.bible(s))
     elif a.cmd == 'timeline':
         print(canon_views.timeline(s, a.character))
+    elif a.cmd == 'page':
+        print(canon_views.page_summary(s, a.page, validate(s)))
 
 
 if __name__ == '__main__':
