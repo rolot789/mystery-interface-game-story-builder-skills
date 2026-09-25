@@ -19,7 +19,10 @@
 >   - Notion 템플릿 1.1.0을 만들고 1.0.0에서 추가형으로 전환하는 요청 생성기를 넣었다.
 >   - 계획과 달리 Valid From/Until 속성을 따로 두지 않고 Event Time을 연표 날짜로 함께 쓴다.
 >   - 연표 뷰는 timeline이 아니라 Event Time 순서의 표다.
-> - Phase 5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
+> - Phase 5: 완료.
+>   - 행동 평가 시나리오 11개를 추가했다. 8개는 정답 규칙을 테스트가 확인한다.
+>   - CHANGELOG를 추가하고 버전을 1.1.0으로 올렸다.
+>   - README를 정리했다. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
 
 ---
 
