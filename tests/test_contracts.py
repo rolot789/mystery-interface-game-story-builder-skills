@@ -62,7 +62,7 @@ class Contracts(unittest.TestCase):
         r=reg();self.assertEqual(notion_plan.bootstrap(r,'root'),[]);self.assertEqual(notion_plan.bootstrap(r,'pages'),[]);self.assertEqual(notion_plan.bootstrap(r,'databases'),[])
         rel=notion_plan.bootstrap(r,'relations');self.assertTrue(rel)
         for op in rel:self.assertIn('RELATION(',op['arguments']['statements'])
-        views=notion_plan.bootstrap(r,'views');self.assertEqual(len(views),10)
+        views=notion_plan.bootstrap(r,'views');self.assertEqual(len(views),len(notion_plan.BLUE['views']))
         r['views']={op['operation_key'].removeprefix('bootstrap/view/'):'returned-id' for op in views};self.assertEqual(notion_plan.bootstrap(r,'views'),[])
     def test_destination_and_id_validation(self):
         with self.assertRaises(ValueError):notion_plan.bootstrap({'project_id':'P1','version_id':'V1','title':'x'},'root')
@@ -83,6 +83,23 @@ class Contracts(unittest.TestCase):
         row['body']=row['body'].replace('#### 내용\nfixture','#### 내용\nhuman edit')
         with self.assertRaises(ValueError):notion_plan.upsert(s,r,remote,'entities')
         with self.assertRaises(ValueError):notion_plan.upsert(s,r,{'complete':False,'records':[]},'entities')
+    def test_impact_reaches_evidence(self):
+        self.assertIn('T1',canon.impact(sample(),['F1'])['needs_review'])
+    def test_trace_after_origin(self):
+        s=sample();s['entities'][6]['data']['created_at']='2025-12-31T00:00:00+00:00';self.assertTrue(any(e.startswith('TIME-003') for e in canon.validate(s)['errors']))
+        s['entities'][6]['data']['created_at']='2026-01-02T00:00:00+00:00';self.assertEqual(canon.validate(s)['errors'],[])
+    def test_knowledge_after_source(self):
+        s=sample();s['entities'][6]['data']['created_at']='2026-01-02T00:00:00+00:00';s['entities'][7]['data']['from']='2026-01-01T12:00:00+00:00'
+        self.assertTrue(any(e.startswith('TIME-004') for e in canon.validate(s)['errors']))
+    def test_precondition_order_and_cycle(self):
+        s=sample();ev=copy.deepcopy(s['entities'][4]);ev['id']='EV0';ev['data']['at']='2026-06-01T00:00:00+00:00';ev['data']['preconditions']=['R1'];s['entities'].append(ev);s['entities'][4]['data']['preconditions']=['EV0']
+        self.assertTrue(any(e.startswith('TIME-002') for e in canon.validate(s)['errors']))
+        ev['data']['preconditions']=['EV1'];self.assertTrue(any(e.startswith('GRAPH-001') for e in canon.validate(s)['errors']))
+    def test_claim_fact_refs_and_knows_deprecated(self):
+        s=sample();s['entities'].append({**copy.deepcopy(s['entities'][3]),'id':'CL1','kind':'Claim','owner':canon.OWNERS['Claim'],'data':{'statement':'x','speaker_id':'C1','audience':'x','stated_at':None,'intent':'lie','fact_ids':['missing']}})
+        self.assertTrue(canon.validate(s)['errors'])
+        s=sample();s['links'].append({'id':'L2','kind':'knows','source':'C1','target':'F1','reason':'legacy'})
+        r=canon.validate(s);self.assertEqual(r['errors'],[]);self.assertTrue(any('deprecated' in w for w in r['warnings']))
     def test_blocker_cannot_be_accepted_away(self):
         s=sample();s['issues']=[{'id':'Q1','severity':'BLOCKER','status':'ACCEPTED','affected_ids':['F1']}];self.assertTrue(canon.validate(s,True)['errors'])
 

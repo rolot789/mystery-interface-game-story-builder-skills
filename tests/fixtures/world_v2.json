@@ -1,0 +1,625 @@
+{
+  "schema_version": 2,
+  "project_id": "P-HARBOR",
+  "version_id": "V1",
+  "title": "항만 기록",
+  "revision": 1,
+  "charter": {
+    "genre_tone": "사회파",
+    "reality_distance": "REAL_PLUS",
+    "premise": "모든 공공기록이 민간 공사에 위탁된 항만 도시",
+    "scope_in": [
+      "LOC-HARBOR",
+      "ORG-ARCHIVE",
+      "SVC-MSG"
+    ],
+    "scope_out": "중앙 정부 내부",
+    "timezone": "Asia/Seoul",
+    "present_at": "2026-03-14T21:00:00+09:00"
+  },
+  "initial_state": {
+    "result": "pending"
+  },
+  "entities": [
+    {
+      "id": "R-RETENTION",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "메시지 보존 규정",
+      "kind": "WorldRule",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "statement": "업무 메시지는 30일 뒤 서버에서 완전히 삭제된다.",
+        "scope": "기록공사 사내 메신저 전체",
+        "exceptions": "법적 보존 요청이 들어온 대화방은 1년 보존",
+        "grounding": "fictional. 2019년 합병 때 비용 절감으로 도입",
+        "rule_type": "ORGANIZATIONAL",
+        "strength": "SOFT",
+        "valid_from": "2020-01-01T00:00:00+09:00",
+        "enforced_by": [
+          "ORG-ARCHIVE"
+        ],
+        "violation_cost": "감사 지적과 징계"
+      },
+      "depth": "CORE",
+      "visibility": "INSIDER",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "ORG-ARCHIVE",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "기록공사",
+      "kind": "Organization",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "purpose": "항만 도시의 공공기록 위탁 운영",
+        "economy": "시 위탁 수수료",
+        "operations": "기록 접수·보관·열람 대행",
+        "culture": "실수를 기록으로 남기지 않는 문화",
+        "daily_life": "오전 접수, 오후 정리",
+        "founded_at": {
+          "earliest": "2015-01-01T00:00:00+09:00",
+          "latest": "2015-12-31T23:59:59+09:00",
+          "label": "2015년"
+        },
+        "hq_location_id": "LOC-OFFICE",
+        "structure": "사장 결재, 실무는 기록관",
+        "incentives": "처리 건수 평가"
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "SVC-MSG",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "공사 메신저",
+      "kind": "Service",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "purpose": "사내 업무 연락",
+        "provider_id": "ORG-ARCHIVE",
+        "users": "공사 직원",
+        "normal_use": "업무 지시와 보고",
+        "data_lifecycle": "30일 뒤 완전 삭제",
+        "permissions": "관리자 열람 가능",
+        "failures": "월 1회 점검 중단",
+        "launched_at": "2018-05-01T09:00:00+09:00",
+        "retention": [
+          {
+            "data": "message",
+            "keep_days": 30,
+            "after": "HARD_DELETE"
+          }
+        ],
+        "access_policy": [
+          {
+            "role": "관리자",
+            "data": "message",
+            "ops": [
+              "read",
+              "delete"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "type": "message",
+            "timestamp_source": "서버 시각",
+            "delete_trace": "삭제된 메시지 표시"
+          }
+        ]
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "LOC-HARBOR",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "항만 구역",
+      "kind": "Location",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "description": "부두와 창고가 늘어선 구역",
+        "access": "누구나 출입",
+        "rhythm": "새벽 어시장, 밤에는 한산",
+        "place_type": "구역",
+        "connections": []
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "LOC-OFFICE",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "기록공사 본관",
+      "kind": "Location",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "description": "5층 건물",
+        "access": "출입증 필요",
+        "rhythm": "평일 9-18시",
+        "place_type": "건물",
+        "parent_id": "LOC-HARBOR",
+        "connections": [
+          {
+            "to": "LOC-PIER",
+            "minutes": 15,
+            "mode": "도보"
+          }
+        ]
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "LOC-PIER",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "3번 부두",
+      "kind": "Location",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "description": "폐쇄된 부두",
+        "access": "야간 출입 통제 없음",
+        "rhythm": "밤에는 인적 없음",
+        "place_type": "부두",
+        "parent_id": "LOC-HARBOR",
+        "connections": []
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "HIST-MERGER",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "공사 합병",
+      "kind": "HistoryEvent",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "at": {
+          "earliest": "2019-09-01T00:00:00+09:00",
+          "latest": "2019-11-30T23:59:59+09:00",
+          "label": "2019년 가을"
+        },
+        "summary": "두 기록 기관이 합병했다",
+        "consequences": "보존 규정 통일",
+        "public_account": "효율화를 위한 합병",
+        "preconditions": [],
+        "legacy_ids": [
+          "ORG-ARCHIVE"
+        ]
+      },
+      "depth": "CORE",
+      "visibility": "INSIDER",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "TERM-ARCHIVE",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "기록공사",
+      "kind": "Term",
+      "revision": 1,
+      "owner": "mystery-world-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "definition": "공공기록 위탁 운영 기관",
+        "register": "주민 전반, 공식 문서",
+        "aliases": [
+          "공사"
+        ],
+        "forbidden_aliases": [
+          "기록청"
+        ],
+        "refers_to": "ORG-ARCHIVE"
+      },
+      "depth": "CORE",
+      "visibility": "PUBLIC",
+      "origin": "FOUNDATION"
+    },
+    {
+      "id": "C1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "기록관 윤",
+      "kind": "Character",
+      "revision": 1,
+      "owner": "character-knowledge-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "identity": "기록관",
+        "motive": "실수를 덮으려 한다",
+        "daily_life": "부두 근처에 산다",
+        "relationships": "팀장과 불화",
+        "affiliations": [
+          {
+            "org_id": "ORG-ARCHIVE",
+            "role": "기록관",
+            "from": "2020-03-01T00:00:00+09:00"
+          }
+        ],
+        "home_location_id": "LOC-PIER",
+        "voice": "존댓말, 짧은 문장"
+      }
+    },
+    {
+      "id": "EV1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "야간 기록 삭제",
+      "kind": "Event",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "at": "2026-03-01T22:00:00+09:00",
+        "actors": [
+          "C1",
+          "ORG-ARCHIVE"
+        ],
+        "preconditions": [
+          "R-RETENTION",
+          "HIST-MERGER"
+        ],
+        "location_id": "LOC-OFFICE",
+        "duration_minutes": 30,
+        "action": "기록을 지운다",
+        "result": "원본이 사라진다"
+      }
+    },
+    {
+      "id": "EV2",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "부두 방문",
+      "kind": "Event",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "at": "2026-03-01T23:00:00+09:00",
+        "actors": [
+          "C1"
+        ],
+        "preconditions": [
+          "EV1"
+        ],
+        "location_id": "LOC-PIER",
+        "action": "부두로 간다",
+        "result": "목격된다"
+      }
+    },
+    {
+      "id": "F1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "삭제는 윤이 했다",
+      "kind": "Fact",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "statement": "윤이 기록을 삭제했다",
+        "basis": "EV1",
+        "event_id": "EV1"
+      }
+    },
+    {
+      "id": "T1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "삭제 직후 메시지",
+      "kind": "Trace",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "origin_type": "event",
+        "origin_ids": [
+          "EV1"
+        ],
+        "summary": "윤이 팀장에게 보낸 메시지",
+        "access": "관리자 열람",
+        "distortion": "없음",
+        "created_at": "2026-03-01T22:10:00+09:00",
+        "author_id": "C1",
+        "service_id": "SVC-MSG",
+        "artifact_type": "message"
+      }
+    },
+    {
+      "id": "T2",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "보존 규정 공지",
+      "kind": "Trace",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "origin_type": "system",
+        "origin_ids": [
+          "R-RETENTION"
+        ],
+        "summary": "메신저 상단 공지",
+        "access": "직원 누구나",
+        "distortion": "없음",
+        "created_at": null
+      }
+    },
+    {
+      "id": "K1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "윤이 자기 행동을 앎",
+      "kind": "Knowledge",
+      "revision": 1,
+      "owner": "character-knowledge-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "character_id": "C1",
+        "fact_id": "F1",
+        "state": "KNOWS",
+        "from": "2026-03-01T22:10:00+09:00",
+        "until": null,
+        "acquired_via": [
+          "T1"
+        ]
+      }
+    },
+    {
+      "id": "CL1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "윤의 부인",
+      "kind": "Claim",
+      "revision": 1,
+      "owner": "character-knowledge-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "statement": "저는 그날 본관에 없었습니다",
+        "speaker_id": "C1",
+        "audience": "팀장",
+        "stated_at": "2026-03-05T10:00:00+09:00",
+        "intent": "lie",
+        "fact_ids": [
+          "F1"
+        ]
+      }
+    },
+    {
+      "id": "CH1",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "공개 여부",
+      "kind": "Choice",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "prompt": "메시지를 공개할까",
+        "known_information": "T1",
+        "available_when": true,
+        "options": [
+          {
+            "id": "a",
+            "label": "공개",
+            "condition": true,
+            "effects": {
+              "result": "a"
+            }
+          },
+          {
+            "id": "b",
+            "label": "비공개",
+            "condition": true,
+            "effects": {
+              "result": "b"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ENDa",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "결말 a",
+      "kind": "Ending",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "condition": {
+          "var": "result",
+          "eq": "a"
+        },
+        "consequences": "결과 a",
+        "exclusive": true,
+        "witness": [
+          {
+            "choice_id": "CH1",
+            "option_id": "a"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ENDb",
+      "project_id": "P-HARBOR",
+      "version_id": "V1",
+      "title": "결말 b",
+      "kind": "Ending",
+      "revision": 1,
+      "owner": "mystery-plot-builder",
+      "status": "CONFIRMED",
+      "review": "VALID",
+      "depends_on": [],
+      "decision_refs": [
+        "D1"
+      ],
+      "data": {
+        "condition": {
+          "var": "result",
+          "eq": "b"
+        },
+        "consequences": "결과 b",
+        "exclusive": true,
+        "witness": [
+          {
+            "choice_id": "CH1",
+            "option_id": "b"
+          }
+        ]
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "L1",
+      "kind": "supports",
+      "source": "T1",
+      "target": "F1",
+      "reason": "삭제 직후 본인 메시지"
+    },
+    {
+      "id": "L2",
+      "kind": "exploits",
+      "source": "EV1",
+      "target": "R-RETENTION",
+      "reason": "30일 삭제 규정 때문에 흔적이 곧 사라질 것이라 믿었다"
+    },
+    {
+      "id": "L3",
+      "kind": "entails",
+      "source": "R-RETENTION",
+      "target": "SVC-MSG",
+      "reason": "보존 규정이 메신저 삭제 기능을 요구한다"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "question": "fixture authorization",
+      "answer": "approved fixture",
+      "status": "CONFIRMED"
+    }
+  ],
+  "issues": [],
+  "pending_decisions": [],
+  "session": {}
+}

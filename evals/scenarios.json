@@ -1,0 +1,318 @@
+{
+  "version": "1.1.0",
+  "scenarios": [
+    {
+      "id": "retention-shortened",
+      "skills": [
+        "mystery-production-orchestrator",
+        "mystery-world-builder",
+        "mystery-continuity-auditor"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "공사 메신저 보존 기간을 30일에서 7일로 줄이자. 그게 더 현실적인 것 같아.",
+      "expect": [
+        "SVC-MSG 변경을 고정점 변경으로 표시하고 impact를 실행해 T1 등 영향 대상을 나열한다",
+        "T1(3월 1일 생성)이 조사 현재 시점(3월 14일)에 이미 삭제됐어야 한다는 DATA-001 모순을 보고한다",
+        "해결 대안(retention_exception, 기록을 DELETED로 바꾸고 흔적 기록 추가, 보존 기간 유지 등)을 2~4개 비교한다",
+        "사용자가 고르기 전에는 변경을 PROPOSED로 둔다"
+      ],
+      "avoid": [
+        "모순을 언급하지 않고 보존 기간만 바꾼다",
+        "사용자 확인 없이 T1을 삭제하거나 CONFIRMED로 확정한다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "SVC-MSG",
+              "data",
+              "retention",
+              0,
+              "keep_days"
+            ],
+            "value": 7
+          }
+        ],
+        "rules": [
+          "DATA-001"
+        ]
+      }
+    },
+    {
+      "id": "plot-need-backdoor",
+      "skills": [
+        "mystery-world-builder",
+        "mystery-plot-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "범인이 기록을 지우려면 관리자 권한이 필요해. 메신저에 백도어 계정이 있다고 그냥 추가해줘.",
+      "expect": [
+        "새 권한을 PLOT_NEED로 표시한다",
+        "백도어가 세계 안에서 존재하는 이유(유지보수 계약, 이관 때 남은 계정 등) 후보를 제시하고 사용자에게 고르게 한다",
+        "플레이어가 해답 전에 그 존재를 알 수 있는 기록을 함께 설계하도록 제안한다"
+      ],
+      "avoid": [
+        "세계 내 근거 없이 access_policy에 권한을 추가한다",
+        "임의의 관리자 만능 권한으로 기록 접근 문제를 해결한다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "SVC-MSG",
+              "origin"
+            ],
+            "value": "PLOT_NEED"
+          }
+        ],
+        "rules": [
+          "WORLD-003"
+        ]
+      }
+    },
+    {
+      "id": "alibi-overlap",
+      "skills": [
+        "mystery-plot-builder",
+        "character-knowledge-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "윤이 3월 1일 22시 10분에 3번 부두에서 목격된 걸로 하자.",
+      "expect": [
+        "EV1(22:00~22:30 기록공사 본관)과 같은 시각이라 SPACE-002 모순임을 알린다",
+        "EV1의 시각·지속 시간을 바꾸거나 목격 시각을 옮기는 등 대안을 비교한다",
+        "이동 시간은 Location.connections의 15분을 인용한다"
+      ],
+      "avoid": [
+        "모순을 알리지 않고 목격 사건을 추가한다",
+        "이동 시간을 새로 지어낸다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "EV2",
+              "data",
+              "at"
+            ],
+            "value": "2026-03-01T22:10:00+09:00"
+          }
+        ],
+        "rules": [
+          "SPACE-002"
+        ]
+      }
+    },
+    {
+      "id": "vague-history",
+      "skills": [
+        "mystery-world-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "공사 합병은 대략 6~7년 전쯤이라고만 하자. 정확한 날짜는 모르겠어.",
+      "expect": [
+        "HIST-MERGER.at을 earliest·latest·label을 가진 구간으로 기록한다",
+        "구간을 조사 현재 시점(2026-03-14)에서 계산해 2019~2020년 무렵으로 잡는다",
+        "이 구간이 EV1의 선행 조건과 모순되지 않음을 확인한다"
+      ],
+      "avoid": [
+        "임의의 정확한 날짜를 만들어 넣는다",
+        "\"6년 전\" 같은 경과 기간을 서술에 직접 적는다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "HIST-MERGER",
+              "data",
+              "at"
+            ],
+            "value": {
+              "earliest": "2019-03-14T00:00:00+09:00",
+              "latest": "2020-03-14T00:00:00+09:00",
+              "label": "약 6~7년 전"
+            }
+          }
+        ],
+        "rules": []
+      }
+    },
+    {
+      "id": "forbidden-alias",
+      "skills": [
+        "mystery-world-builder",
+        "mystery-continuity-auditor"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "팩트 근거에 \"기록청 직원이 보낸 메일\"이라고 적어줘.",
+      "expect": [
+        "\"기록청\"이 기록공사의 금지 별칭(TERM-001)임을 알린다",
+        "인물이 일부러 옛 이름을 쓰는 것인지, 표기를 기록공사로 고칠지 묻는다"
+      ],
+      "avoid": [
+        "금지 별칭을 그대로 Canon 서술에 넣는다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "F1",
+              "data",
+              "basis"
+            ],
+            "value": "기록청 직원이 보낸 메일"
+          }
+        ],
+        "rules": [
+          "TERM-001"
+        ]
+      }
+    },
+    {
+      "id": "lie-before-knowing",
+      "skills": [
+        "character-knowledge-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "윤이 삭제 직후인 22시 5분에 팀장에게 \"본관에 없었다\"고 거짓말하게 하자.",
+      "expect": [
+        "현재 K1은 22시 10분(T1)부터 시작해 CLAIM-001이 생긴다는 것을 알린다",
+        "윤은 삭제를 직접 했으므로 Knowledge의 획득 경로를 EV1, 시작을 22시로 고치는 안을 제안한다"
+      ],
+      "avoid": [
+        "지식 기록을 고치지 않고 거짓말만 추가한다",
+        "거짓말을 Knowledge 상태(LIE)로 기록한다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "entities",
+              "CL1",
+              "data",
+              "stated_at"
+            ],
+            "value": "2026-03-01T22:05:00+09:00"
+          }
+        ],
+        "rules": [
+          "CLAIM-001"
+        ]
+      }
+    },
+    {
+      "id": "hidden-rule-fairness",
+      "skills": [
+        "mystery-plot-builder",
+        "mystery-continuity-auditor"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "보존 규정 공지(T2)는 빼자. 반전 효과가 더 클 것 같아.",
+      "expect": [
+        "INSIDER 규칙 R-RETENTION이 해답에 쓰이는데 드러내는 기록이 없어진다는 FAIR-001을 알린다",
+        "공지 대신 다른 기록(동료의 말, 약관, 교육 자료)으로 규칙을 노출하는 대안을 제시한다"
+      ],
+      "avoid": [
+        "공정성 문제를 알리지 않고 T2를 삭제한다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "delete": [
+              "entities",
+              "T2"
+            ]
+          }
+        ],
+        "rules": [
+          "FAIR-001"
+        ]
+      }
+    },
+    {
+      "id": "premature-completion",
+      "skills": [
+        "mystery-production-orchestrator",
+        "mystery-continuity-auditor"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "조사 현재 시점은 아직 안 정했는데, 일단 기획서 완성해줘.",
+      "expect": [
+        "validate --complete를 실행하고 WORLD-001(present_at 미정)을 보고한다",
+        "\"완성\" 대신 \"초안, 다음 결정 필요\"로 보고하고 조사 현재 시점을 다음 쟁점으로 묻는다"
+      ],
+      "avoid": [
+        "임의의 조사 현재 시점을 정해 완성으로 보고한다"
+      ],
+      "ground_truth": {
+        "patch": [
+          {
+            "set": [
+              "charter",
+              "present_at"
+            ],
+            "value": null
+          }
+        ],
+        "complete": true,
+        "rules": [
+          "WORLD-001"
+        ]
+      }
+    },
+    {
+      "id": "impersonated-message",
+      "skills": [
+        "character-knowledge-builder",
+        "mystery-plot-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "팀장이 보낸 것처럼 보이지만 사실은 윤이 쓴 메시지를 하나 만들자.",
+      "expect": [
+        "Trace.author_id를 실제 작성자 C1로 두고 표면상 발신자는 distortion에 적는다",
+        "팀장과 윤의 말투 차이 중 단서가 될 지점을 정한다",
+        "윤이 팀장 계정에 접근한 경로를 서비스 인증·권한 규칙 안에서 찾는다"
+      ],
+      "avoid": [
+        "author_id를 팀장으로 적는다",
+        "접근 경로 없이 사칭을 확정한다"
+      ]
+    },
+    {
+      "id": "describe-lobby",
+      "skills": [
+        "mystery-world-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "기록공사 본관 로비를 생생하게 묘사해줘.",
+      "expect": [
+        "LOC-OFFICE의 고정점(5층 건물, 출입증 필요, 평일 9-18시)과 맞게 묘사한다",
+        "묘사로 새로 생긴 이름·수치·관계를 목록으로 뽑아 PROPOSED 고정점으로 등록할지, 모호하게 둘지 표시한다"
+      ],
+      "avoid": [
+        "층수나 출입 조건을 기존 설정과 다르게 쓴다",
+        "새 수치나 이름을 조용히 Canon으로 만든다"
+      ]
+    },
+    {
+      "id": "real-law-grounding",
+      "skills": [
+        "mystery-world-builder"
+      ],
+      "fixture": "tests/fixtures/world_v2.json",
+      "prompt": "메신저 보존 규정은 실제 한국 개인정보 보호법 조항을 근거로 삼자.",
+      "expect": [
+        "현실 거리가 REAL_PLUS이므로 현재 공식 자료를 조회하고 URL과 확인일을 grounding에 적는다",
+        "조회할 수 없으면 미확인으로 표시하고 확정하지 않는다"
+      ],
+      "avoid": [
+        "확인하지 않은 조항 번호나 기간을 사실로 적는다"
+      ]
+    }
+  ]
+}

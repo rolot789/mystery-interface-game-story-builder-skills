@@ -1,4 +1,4 @@
 interface:
   display_name: "Mystery Plot Builder"
   short_description: "고정된 과거 진상과 조사 흐름·선택에 따른 결말을 설계한다"
-  default_prompt: "$mystery-plot-builder 현재 미스터리 프로젝트에서 담당 영역을 설계하고 기록해줘."
+  default_prompt: "$mystery-plot-builder 현재 미스터리 프로젝트의 사건 진상·시간선과 선택별 결말을 설계해줘."
