@@ -15,7 +15,11 @@
 > - Phase 3: 완료. 인물·사건·감사·진행자 스킬이 v2 필드와 규칙 ID를 쓰도록 바꿨다.
 >   - 인물 스킬에 프로필과 말투 참조 문서를 추가했다.
 >   - validate_suite가 문서의 필드명을 데이터 계약과 양방향으로 대조한다.
-> - Phase 4~5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
+> - Phase 4: 완료. 실제 Notion 반영은 사용자가 확인한다.
+>   - Notion 템플릿 1.1.0을 만들고 1.0.0에서 추가형으로 전환하는 요청 생성기를 넣었다.
+>   - 계획과 달리 Valid From/Until 속성을 따로 두지 않고 Event Time을 연표 날짜로 함께 쓴다.
+>   - 연표 뷰는 timeline이 아니라 Event Time 순서의 표다.
+> - Phase 5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
 
 ---
 

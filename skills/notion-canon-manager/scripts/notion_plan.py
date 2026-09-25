@@ -2,6 +2,7 @@
 """Generate Notion MCP requests; never execute network mutations."""
 import argparse
 import json
+import re
 import sys
 import uuid
 from pathlib import Path
@@ -25,6 +26,17 @@ def event_time(value):
         start=value.get('earliest') or value.get('latest');p={'date:Event Time:start':start,'date:Event Time:is_datetime':1}
         if value.get('earliest') and value.get('latest'):p['date:Event Time:end']=value['latest']
         return p
+    return {}
+
+# Date shown on the world timeline view for kinds that carry a year-like anchor.
+TIMELINE={'Event':'at','HistoryEvent':'at','Organization':'founded_at','Service':'launched_at'}
+def edge(value,first):
+    if isinstance(value,str):return value
+    if isinstance(value,dict):return value.get('earliest' if first else 'latest') or value.get('latest' if first else 'earliest')
+def timeline(e):
+    d=e['data']
+    if e['kind'] in TIMELINE:return event_time(d.get(TIMELINE[e['kind']]))
+    if e['kind']=='WorldRule' and d.get('valid_from'):return event_time({k:v for k,v in [('earliest',edge(d['valid_from'],True)),('latest',edge(d.get('valid_until'),False))] if v})
     return {}
 
 def version_data(s):
@@ -70,7 +82,8 @@ def bootstrap(reg,phase):
             filters=[]
             if view['database']!='versions':filters.append('"Version" = "'+version+'"')
             if view.get('filter'):filters.append('('+view['filter']+')')
-            dsl=('FILTER '+' AND '.join(filters)+'; ' if filters else '')+'SHOW '+', '.join('"'+x+'"' for x in view['show'])+'; SORT BY "Name" ASC'
+            by,order=view.get('sort',['Name','ASC'])
+            dsl=('FILTER '+' AND '.join(filters)+'; ' if filters else '')+'SHOW '+', '.join('"'+x+'"' for x in view['show'])+'; SORT BY "'+by+'" '+order
             out.append(request('bootstrap/view/'+op,'notion_create_view',{'parent_page_id':uid(pages[view['page']]),'data_source_id':ds(reg,view['database']),'name':view['name']+' · '+reg['version_id'],'type':view['type'],'configure':dsl}))
     return out
 
@@ -82,7 +95,8 @@ def desired_records(s,reg,collection):
         for e in s['entities']:
             d=e['data'];summary=next((d[k] for k in ['statement','summary','purpose','description','definition'] if isinstance(d.get(k),str)),e['title'])
             p={'Name':e['title'],'Key':key(reg,e['id']),'Entity ID':e['id'],'Kind':e['kind'],'Version':v,'Canon':e['status'],'Review':e['review'],'Owner':e['owner'],'Summary':summary[:1000]}
-            if e['kind'] in {'Event','HistoryEvent'}:p.update(event_time(d.get('at')))
+            p.update(timeline(e))
+            p.update({name:e[k] for k,name in [('depth','Depth'),('visibility','Visibility'),('origin','Origin')] if k in e})
             out.append((e,p))
     elif collection=='versions':
         obj=wrap(reg,'VERSION',reg['version_id'],version_data(s),s['revision'])
@@ -135,12 +149,36 @@ def upsert(s,reg,remote,collection):
         out.append(request('properties/'+k,'notion_update_page',{'page_id':page,'command':'update_properties','properties':props,'allow_async':False}))
     return out
 
+def parse_type(text):
+    m=re.fullmatch(r'\s*(MULTI_SELECT|SELECT)\s*\((.*)\)\s*',text,re.S)
+    if not m:return re.split(r'[\s(]',text.strip(),maxsplit=1)[0].upper(),None
+    return m.group(1),[(n.replace("''","'"),c or None) for n,c in re.findall(r"'((?:[^']|'')*)'(?:\s*:\s*(\w+))?",m.group(2))]
+def select_type(kind,options):return kind+'('+', '.join("'"+n.replace("'","''")+"'"+(':'+c if c else '') for n,c in options)+')'
+
+def upgrade(reg,current):
+    """Plan additive schema changes from the fetched schema to the current template; never drop or retype."""
+    out=[]
+    for name,spec in BLUE['databases'].items():
+        if not isinstance(current.get(name),dict):raise ValueError('fetch the data source and pass its current schema: '+name)
+        have=current[name];statements=[]
+        for prop,want in spec['properties'].items():
+            if prop not in have:statements.append('ADD COLUMN "'+prop+'" '+want);continue
+            wkind,wopts=parse_type(want);hkind,hopts=parse_type(have[prop])
+            if hkind!=wkind:raise ValueError(f'{name}.{prop} is {hkind} but the template expects {wkind}; resolve it by hand')
+            missing=[(n,c) for n,c in wopts or [] if n not in {x for x,_ in hopts}]
+            # ALTER ... SET replaces the whole option list: keep every existing option and color, then append.
+            if missing:statements.append('ALTER COLUMN "'+prop+'" SET '+select_type(hkind,hopts+missing))
+        if statements:out.append(request('upgrade/'+BLUE['template_version']+'/'+name,'notion_update_data_source',{'data_source_id':ds(reg,name),'statements':'; '.join(statements)}))
+    return out
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);sp=p.add_subparsers(dest='cmd',required=True)
     b=sp.add_parser('bootstrap');b.add_argument('registry');b.add_argument('--phase',required=True,choices=['root','pages','databases','relations','version','views'])
+    g=sp.add_parser('upgrade');g.add_argument('registry');g.add_argument('schema')
     u=sp.add_parser('upsert');u.add_argument('snapshot');u.add_argument('registry');u.add_argument('remote');u.add_argument('--collection',required=True,choices=['entities','links','decisions','issues','sessions','versions'])
     a=p.parse_args();reg=canon.read(a.registry)
     if a.cmd=='bootstrap':out=bootstrap(reg,a.phase)
+    elif a.cmd=='upgrade':out=upgrade(reg,canon.read(a.schema))
     else:out=upsert(canon.read(a.snapshot),reg,canon.read(a.remote),a.collection)
     print(json.dumps({'executed':False,'operations':out},ensure_ascii=False,indent=2))
 if __name__=='__main__':

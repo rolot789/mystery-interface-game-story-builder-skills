@@ -28,7 +28,7 @@ Notion을 확정 기록의 기준으로 사용하라. 로컬 snapshot은 읽어 
 
 ## 도구의 역할
 
-`canon.py`는 snapshot 생성·검증·영향 추적·관리 본문 렌더링·v1 이관(`migrate`)·세계 바이블(`bible`)·시간선(`timeline`) 출력을 한다. 검증 결과의 findings는 규칙 ID와 대상 ID를 가지므로 QA Issue로 그대로 옮길 수 있다. `notion_plan.py`는 현재 MCP용 요청 계획을 생성하며 직접 네트워크 요청을 하지 않는다. 계획을 출력한 것과 Notion 실행을 혼동하지 마라. 현재 도구의 schema가 다르면 최신 도구 설명을 읽고 같은 계약에 맞게 조정하라. 네트워크용 토큰을 요구하거나 저장하지 마라.
+`canon.py`는 snapshot 생성·검증·영향 추적·관리 본문 렌더링·v1 이관(`migrate`)·세계 바이블(`bible`)·시간선(`timeline`) 출력을 한다. 검증 결과의 findings는 규칙 ID와 대상 ID를 가지므로 QA Issue로 그대로 옮길 수 있다. `notion_plan.py`는 현재 MCP용 요청 계획(최초 구성, 행 생성·갱신, 템플릿 1.0.0 → 1.1.0 추가형 전환)을 생성하며 직접 네트워크 요청을 하지 않는다. 기존 프로젝트의 Registry에 template_version이 없거나 1.0.0이면 schema v2 객체를 기록하기 전에 [Notion 템플릿](references/notion-template.md)의 전환 절차를 먼저 수행하라. 계획을 출력한 것과 Notion 실행을 혼동하지 마라. 현재 도구의 schema가 다르면 최신 도구 설명을 읽고 같은 계약에 맞게 조정하라. 네트워크용 토큰을 요구하거나 저장하지 마라.
 
 본문 템플릿은 `assets/page-templates.json`에 있다. 데이터베이스 템플릿 버튼 API가 있다고 가정하지 않고 페이지 생성 시 해당 본문을 넣어라. 템플릿 자체를 실제 세계 설정으로 확정하지 마라.
 

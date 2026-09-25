@@ -314,6 +314,74 @@ class NotionPlan(unittest.TestCase):
         version = notion_plan.upsert(s, self.reg(), {'complete': True, 'records': []}, 'versions')[0]
         self.assertIn('"charter"', version['arguments']['pages'][0]['content'])
 
+    def test_world_metadata_and_timeline_properties(self):
+        ops = notion_plan.upsert(world(), self.reg(), {'complete': True, 'records': []}, 'entities')
+        props = {op['arguments']['pages'][0]['properties']['Entity ID']: op['arguments']['pages'][0]['properties'] for op in ops}
+        self.assertEqual((props['R-RETENTION']['Depth'], props['R-RETENTION']['Visibility'], props['R-RETENTION']['Origin']), ('CORE', 'INSIDER', 'FOUNDATION'))
+        self.assertEqual(props['R-RETENTION']['date:Event Time:start'], '2020-01-01T00:00:00+09:00')
+        self.assertEqual(props['ORG-ARCHIVE']['date:Event Time:start'], '2015-01-01T00:00:00+09:00')
+        self.assertEqual(props['SVC-MSG']['date:Event Time:start'], '2018-05-01T09:00:00+09:00')
+        self.assertNotIn('Depth', props['C1'])
+
+    def test_legacy_records_keep_their_properties(self):
+        import test_contracts
+        s = test_contracts.sample()
+        reg = test_contracts.reg()
+        props = {op['arguments']['pages'][0]['properties']['Entity ID']: op['arguments']['pages'][0]['properties'] for op in notion_plan.upsert(s, reg, {'complete': True, 'records': []}, 'entities')}
+        for e in s['entities']:
+            extra = {k for k in props[e['id']] if k.startswith('date:')} - ({'date:Event Time:start', 'date:Event Time:is_datetime'} if e['kind'] == 'Event' else set())
+            self.assertEqual(extra, set())
+            self.assertFalse({'Depth', 'Visibility', 'Origin'} & set(props[e['id']]))
+
+
+class TemplateUpgrade(unittest.TestCase):
+    def old_schema(self):
+        schema = {name: dict(spec['properties']) for name, spec in notion_plan.BLUE['databases'].items()}
+        for prop in ['Depth', 'Visibility', 'Origin']:
+            del schema['entities'][prop]
+        schema['entities']['Kind'] = "SELECT('WorldRule':default, 'Organization', 'Service', 'Character', 'Event', 'Fact', 'Claim', 'Knowledge', 'Trace', 'Choice', 'Ending', 'Custom kind':pink)"
+        schema['links']['Relation'] = "SELECT('supports','contradicts','generates','knows','depends_on','related')"
+        schema['entities']['Version'] = "RELATION('00000000-0000-0000-0000-000000000050')"
+        return schema
+
+    def reg(self):
+        return {'data_sources': {k: f'00000000-0000-0000-0000-{i:012d}' for i, k in enumerate(notion_plan.BLUE['databases'], 50)}}
+
+    def test_additive_upgrade_keeps_existing_options(self):
+        ops = {op['operation_key']: op['arguments']['statements'] for op in notion_plan.upgrade(self.reg(), self.old_schema())}
+        self.assertEqual(set(ops), {'upgrade/1.1.0/entities', 'upgrade/1.1.0/links'})
+        entities = ops['upgrade/1.1.0/entities']
+        self.assertIn('ADD COLUMN "Depth" SELECT(', entities)
+        self.assertIn("'WorldRule':default", entities)
+        self.assertIn("'Custom kind':pink, 'Location', 'HistoryEvent', 'Term')", entities)
+        self.assertNotIn('DROP', entities)
+        self.assertIn("'related', 'entails', 'exploits')", ops['upgrade/1.1.0/links'])
+
+    def test_upgraded_schema_needs_nothing(self):
+        current = {name: dict(spec['properties']) for name, spec in notion_plan.BLUE['databases'].items()}
+        current['entities']['User Added'] = 'RICH_TEXT'
+        self.assertEqual(notion_plan.upgrade(self.reg(), current), [])
+
+    def test_refuses_retype_and_missing_schema(self):
+        schema = self.old_schema()
+        schema['entities']['Summary'] = 'NUMBER FORMAT \'dollar\''
+        with self.assertRaises(ValueError):
+            notion_plan.upgrade(self.reg(), schema)
+        schema = self.old_schema()
+        del schema['issues']
+        with self.assertRaises(ValueError):
+            notion_plan.upgrade(self.reg(), schema)
+
+    def test_new_views_only(self):
+        reg = {'project_id': 'P', 'version_id': 'V1', 'version_page_id': '00000000-0000-0000-0000-000000000002', 'data_sources': self.reg()['data_sources'],
+               'pages': {k: f'00000000-0000-0000-0000-{i:012d}' for i, k in enumerate(notion_plan.BLUE['pages'], 10)}}
+        new = {'world_timeline', 'world_places', 'world_services', 'world_terms'}
+        reg['views'] = {'V1/' + v['key']: 'returned-id' for v in notion_plan.BLUE['views'] if v['key'] not in new}
+        ops = notion_plan.bootstrap(reg, 'views')
+        self.assertEqual({op['operation_key'].rsplit('/', 1)[1] for op in ops}, new)
+        timeline = next(op for op in ops if op['operation_key'].endswith('world_timeline'))
+        self.assertTrue(timeline['arguments']['configure'].endswith('SORT BY "Event Time" ASC'))
+
 
 if __name__ == '__main__':
     unittest.main()

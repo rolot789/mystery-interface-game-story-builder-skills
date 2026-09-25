@@ -62,7 +62,7 @@ class Contracts(unittest.TestCase):
         r=reg();self.assertEqual(notion_plan.bootstrap(r,'root'),[]);self.assertEqual(notion_plan.bootstrap(r,'pages'),[]);self.assertEqual(notion_plan.bootstrap(r,'databases'),[])
         rel=notion_plan.bootstrap(r,'relations');self.assertTrue(rel)
         for op in rel:self.assertIn('RELATION(',op['arguments']['statements'])
-        views=notion_plan.bootstrap(r,'views');self.assertEqual(len(views),10)
+        views=notion_plan.bootstrap(r,'views');self.assertEqual(len(views),len(notion_plan.BLUE['views']))
         r['views']={op['operation_key'].removeprefix('bootstrap/view/'):'returned-id' for op in views};self.assertEqual(notion_plan.bootstrap(r,'views'),[])
     def test_destination_and_id_validation(self):
         with self.assertRaises(ValueError):notion_plan.bootstrap({'project_id':'P1','version_id':'V1','title':'x'},'root')

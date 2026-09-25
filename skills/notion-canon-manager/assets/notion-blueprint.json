@@ -1,5 +1,5 @@
 {
-  "template_version": "1.0.0",
+  "template_version": "1.1.0",
   "pages": {
     "workshop": "워크숍 · 다음 결정",
     "world": "세계관 · 조직과 서비스",
@@ -35,12 +35,15 @@
         "Content Hash": "RICH_TEXT",
         "Updated": "LAST_EDITED_TIME",
         "Entity ID": "RICH_TEXT",
-        "Kind": "SELECT('WorldRule', 'Organization', 'Service', 'Character', 'Event', 'Fact', 'Claim', 'Knowledge', 'Trace', 'Choice', 'Ending')",
+        "Kind": "SELECT('WorldRule', 'Organization', 'Service', 'Character', 'Event', 'Fact', 'Claim', 'Knowledge', 'Trace', 'Choice', 'Ending', 'Location', 'HistoryEvent', 'Term')",
         "Canon": "SELECT('DRAFT':gray, 'PROPOSED':yellow, 'CONFIRMED':green, 'SUPERSEDED':brown, 'REJECTED':red)",
         "Review": "SELECT('NOT_CHECKED':gray, 'VALID':green, 'NEEDS_REVIEW':yellow, 'BLOCKED':red)",
         "Owner": "RICH_TEXT",
         "Summary": "RICH_TEXT",
-        "Event Time": "DATE"
+        "Event Time": "DATE",
+        "Depth": "SELECT('CORE':red, 'SUPPORTING':blue, 'MENTION':gray)",
+        "Visibility": "SELECT('PUBLIC':green, 'INSIDER':yellow, 'SECRET':red)",
+        "Origin": "SELECT('FOUNDATION':gray, 'PLOT_NEED':orange)"
       },
       "relations": {
         "Version": "versions"
@@ -54,7 +57,7 @@
         "Revision": "NUMBER",
         "Content Hash": "RICH_TEXT",
         "Updated": "LAST_EDITED_TIME",
-        "Relation": "SELECT('supports','contradicts','generates','knows','depends_on','related')",
+        "Relation": "SELECT('supports','contradicts','generates','knows','depends_on','related','entails','exploits')",
         "Reason": "RICH_TEXT"
       },
       "relations": {
@@ -138,13 +141,76 @@
       "database": "entities",
       "name": "설정 목록",
       "type": "table",
-      "filter": "\"Kind\" IN (\"WorldRule\", \"Organization\", \"Service\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "filter": "\"Kind\" IN (\"WorldRule\", \"Organization\", \"Service\", \"Location\", \"HistoryEvent\", \"Term\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
       "show": [
         "Name",
         "Kind",
+        "Depth",
+        "Visibility",
         "Canon",
         "Review",
         "Summary"
+      ]
+    },
+    {
+      "key": "world_timeline",
+      "page": "world",
+      "database": "entities",
+      "name": "연표",
+      "type": "table",
+      "filter": "\"Kind\" IN (\"HistoryEvent\", \"Organization\", \"Service\", \"WorldRule\") AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Kind",
+        "Event Time",
+        "Visibility",
+        "Summary"
+      ],
+      "sort": [
+        "Event Time",
+        "ASC"
+      ]
+    },
+    {
+      "key": "world_places",
+      "page": "world",
+      "database": "entities",
+      "name": "장소",
+      "type": "table",
+      "filter": "\"Kind\" = \"Location\" AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Depth",
+        "Visibility",
+        "Summary"
+      ]
+    },
+    {
+      "key": "world_services",
+      "page": "world",
+      "database": "entities",
+      "name": "정보 환경",
+      "type": "table",
+      "filter": "\"Kind\" = \"Service\" AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Depth",
+        "Visibility",
+        "Event Time",
+        "Summary"
+      ]
+    },
+    {
+      "key": "world_terms",
+      "page": "world",
+      "database": "entities",
+      "name": "용어집",
+      "type": "table",
+      "filter": "\"Kind\" = \"Term\" AND \"Canon\" != \"SUPERSEDED\" AND \"Canon\" != \"REJECTED\"",
+      "show": [
+        "Name",
+        "Summary",
+        "Canon"
       ]
     },
     {

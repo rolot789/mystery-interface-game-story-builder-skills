@@ -44,6 +44,8 @@ Notion 연결은 사용자가 제공한다. 연결과 대상 페이지가 주어
 - [동기화·충돌·부분 실패 복구](skills/notion-canon-manager/references/sync.md)
 - [최종 기획서 템플릿](skills/notion-canon-manager/assets/design-document.md)
 
+현재 템플릿은 1.1.0이다. 세계관 페이지에 연표·장소·정보 환경·용어집 뷰가 있고, Canon Entities에 Depth·Visibility·Origin 속성이 있다. 1.0.0으로 만든 프로젝트는 `notion_plan.py upgrade`로 속성과 선택지를 추가만 해서 옮긴다([전환 절차](skills/notion-canon-manager/references/notion-template.md)).
+
 템플릿은 실제 페이지 생성 요청에 본문과 스키마를 적용하는 방식이다. Notion의 템플릿 버튼이나 외부 백그라운드 서비스가 자동 설치되는 것은 아니다.
 
 ## 동작 원칙
