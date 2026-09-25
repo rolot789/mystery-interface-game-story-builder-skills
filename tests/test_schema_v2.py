@@ -301,7 +301,7 @@ class Views(unittest.TestCase):
 
 class NotionPlan(unittest.TestCase):
     def reg(self):
-        return {'project_id': 'P-HARBOR', 'version_id': 'V1', 'title': '항만 기록', 'workspace_root_requested': True, 'version_page_id': '00000000-0000-0000-0000-000000000002',
+        return {'project_id': 'P-HARBOR', 'version_id': 'V1', 'title': '항만 기록', 'workspace_root_requested': True, 'version_page_id': '00000000-0000-0000-0000-000000000002', 'template_version': '1.2.0',
                 'data_sources': {k: f'00000000-0000-0000-0000-{i:012d}' for i, k in enumerate(notion_plan.BLUE['databases'], 50)}, 'pages': {}, 'bases': {}}
 
     def test_v2_entities_and_charter(self):
@@ -334,6 +334,101 @@ class NotionPlan(unittest.TestCase):
             self.assertFalse({'Depth', 'Visibility', 'Origin'} & set(props[e['id']]))
 
 
+    def test_v2_entities_need_upgraded_template(self):
+        reg = self.reg()
+        del reg['template_version']
+        with self.assertRaises(ValueError):
+            notion_plan.upsert(world(), reg, {'complete': True, 'records': []}, 'entities')
+        import test_contracts
+        self.assertTrue(notion_plan.upsert(test_contracts.sample(), test_contracts.reg(), {'complete': True, 'records': []}, 'entities'))
+
+
+class PageSync(unittest.TestCase):
+    def reg(self):
+        return {'project_id': 'P-HARBOR', 'version_id': 'V1', 'hub_page_id': '00000000-0000-0000-0000-000000000001', 'template_version': '1.2.0',
+                'pages': {k: f'00000000-0000-0000-0000-{i:012d}' for i, k in enumerate(notion_plan.BLUE['pages'], 10)}}
+
+    def fresh(self):
+        return {p: notion_plan.TEMPLATES[p] for p in canon_views.PAGES}
+
+    def apply(self, bodies, plan):
+        bodies = dict(bodies)
+        page_of = {v: k for k, v in self.reg()['pages'].items()}
+        page_of[self.reg()['hub_page_id']] = 'hub'
+        for op in plan['operations']:
+            page = page_of[op['arguments']['page_id']]
+            for u in op['arguments']['content_updates']:
+                self.assertEqual(bodies[page].count(u['old_str']), 1)
+                bodies[page] = bodies[page].replace(u['old_str'], u['new_str'])
+        return bodies
+
+    def test_first_sync_fills_every_summary_and_keeps_notes(self):
+        bodies = self.fresh()
+        bodies['world'] = bodies['world'].replace('사용자 메모를 남기는 영역.', 'KEEP MY NOTE')
+        plan = notion_plan.pages(world(), self.reg(), bodies)
+        self.assertEqual(plan['conflicts'], [])
+        self.assertEqual({op['operation_key'] for op in plan['operations']}, {'page/' + p for p in canon_views.PAGES})
+        after = self.apply(bodies, plan)
+        self.assertIn('KEEP MY NOTE', after['world'])
+        self.assertIn('<table header-row="true">', after['world'])
+        self.assertIn('### 연표', after['world'])
+        self.assertLess(after['world'].index('## Canon 요약'), after['world'].index('## User Notes'))
+        self.assertLess(after['world'].index('## User Notes'), after['world'].index('## 데이터 뷰'))
+
+    def test_resync_is_idempotent_and_tolerates_notion_formatting(self):
+        bodies = self.fresh()
+        plan = notion_plan.pages(world(), self.reg(), bodies)
+        reg = {**self.reg(), 'page_regions': plan['record']['page_regions']}
+        after = self.apply(bodies, plan)
+        reformatted = {p: b.replace('\n\t\t<td>', '<td>').replace('\n\n', '\n') for p, b in after.items()}
+        self.assertEqual(notion_plan.pages(world(), reg, reformatted)['operations'], [])
+
+    def test_canon_change_rewrites_only_that_summary(self):
+        bodies = self.fresh()
+        plan = notion_plan.pages(world(), self.reg(), bodies)
+        reg = {**self.reg(), 'page_regions': plan['record']['page_regions']}
+        after = self.apply(bodies, plan)
+        s = world()
+        entity(s, 'TERM-ARCHIVE')['data']['aliases'].append('기록공')
+        again = notion_plan.pages(s, reg, after)
+        self.assertEqual([op['operation_key'] for op in again['operations']], ['page/world'])
+
+    def test_human_edit_in_summary_is_a_conflict(self):
+        bodies = self.fresh()
+        plan = notion_plan.pages(world(), self.reg(), bodies)
+        reg = {**self.reg(), 'page_regions': plan['record']['page_regions']}
+        after = self.apply(bodies, plan)
+        after['world'] = after['world'].replace('항만 구역', '항만 지구', 1)
+        s = world()
+        s['revision'] = 2
+        again = notion_plan.pages(s, reg, after)
+        self.assertIn({'page': 'world', 'region': 'summary', 'reason': 'region was edited in Notion since the last sync; merge by hand'}, again['conflicts'])
+        self.assertNotIn('page/world', [op['operation_key'] for op in again['operations']])
+
+    def test_template_110_page_gets_summary_inserted(self):
+        old = '## 세계 헌장\n아직 작성되지 않음.\n\n## User Notes\n사용자 메모를 남기는 영역.'
+        bodies = {**self.fresh(), 'world': old}
+        plan = notion_plan.pages(world(), self.reg(), bodies)
+        after = self.apply(bodies, plan)
+        self.assertTrue(after['world'].startswith('## 세계 헌장\n아직 작성되지 않음.'))
+        self.assertIn('## Canon 요약\n', after['world'])
+        with self.assertRaises(ValueError):
+            notion_plan.pages(world(), self.reg(), {**self.fresh(), 'world': old.replace('## User Notes', '## Notes')})
+
+    def test_narrative_region(self):
+        bodies = self.fresh()
+        plan = notion_plan.pages(world(), self.reg(), bodies, {'world': '### 세계의 정체성\n기록이 곧 권력인 항구 도시.'})
+        after = self.apply(bodies, plan)
+        self.assertIn('기록이 곧 권력인 항구 도시.', after['world'])
+        self.assertNotIn('아직 작성되지 않음.', after['world'].split('## Canon 요약')[0])
+
+    def test_escaping(self):
+        s = world()
+        entity(s, 'TERM-ARCHIVE')['data']['definition'] = '공공기록 *위탁* | 운영 [기관]'
+        text = canon_views.page_summary(s, 'world', canon.validate(s))
+        self.assertIn('공공기록 \\*위탁\\* \\| 운영 \\[기관\\]', text)
+
+
 class TemplateUpgrade(unittest.TestCase):
     def old_schema(self):
         schema = {name: dict(spec['properties']) for name, spec in notion_plan.BLUE['databases'].items()}
@@ -349,13 +444,13 @@ class TemplateUpgrade(unittest.TestCase):
 
     def test_additive_upgrade_keeps_existing_options(self):
         ops = {op['operation_key']: op['arguments']['statements'] for op in notion_plan.upgrade(self.reg(), self.old_schema())}
-        self.assertEqual(set(ops), {'upgrade/1.1.0/entities', 'upgrade/1.1.0/links'})
-        entities = ops['upgrade/1.1.0/entities']
+        self.assertEqual(set(ops), {'upgrade/' + notion_plan.BLUE['template_version'] + '/entities', 'upgrade/' + notion_plan.BLUE['template_version'] + '/links'})
+        entities = ops['upgrade/' + notion_plan.BLUE['template_version'] + '/entities']
         self.assertIn('ADD COLUMN "Depth" SELECT(', entities)
         self.assertIn("'WorldRule':default", entities)
         self.assertIn("'Custom kind':pink, 'Location', 'HistoryEvent', 'Term')", entities)
         self.assertNotIn('DROP', entities)
-        self.assertIn("'related', 'entails', 'exploits')", ops['upgrade/1.1.0/links'])
+        self.assertIn("'related', 'entails', 'exploits')", ops['upgrade/' + notion_plan.BLUE['template_version'] + '/links'])
 
     def test_upgraded_schema_needs_nothing(self):
         current = {name: dict(spec['properties']) for name, spec in notion_plan.BLUE['databases'].items()}

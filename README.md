@@ -57,7 +57,17 @@ World Builder는 세계를 헌장 → 기반(연표·장소·기술·경제) →
 - [동기화·충돌·부분 실패 복구](skills/notion-canon-manager/references/sync.md)
 - [최종 기획서 템플릿](skills/notion-canon-manager/assets/design-document.md)
 
-현재 템플릿은 1.1.0이다. 세계관 페이지에 연표·장소·정보 환경·용어집 뷰가 있고, Canon Entities에 Depth·Visibility·Origin 속성이 있다. 1.0.0으로 만든 프로젝트는 `notion_plan.py upgrade`로 속성과 선택지를 추가만 해서 옮긴다([전환 절차](skills/notion-canon-manager/references/notion-template.md)).
+현재 템플릿은 1.2.0이다. Hub와 5개 작업 페이지는 같은 영역 순서를 갖는다.
+
+| 영역 | 쓰는 쪽 |
+|---|---|
+| 안내 | 템플릿 |
+| 해설 | AI의 서술 |
+| Canon 요약 | `canon.py`가 동기화 때마다 다시 만드는 표·목록 |
+| User Notes | 사람. 자동으로 고치지 않는다 |
+| 데이터 뷰 | Notion 필터 뷰 |
+
+`notion_plan.py pages`가 해설과 Canon 요약 영역만 좁게 교체하는 요청을 만든다. 사람이 그 영역을 고쳤으면 덮어쓰지 않고 충돌로 보고한다. 세계관 페이지에는 연표·장소·정보 환경·용어집 뷰가 있고, Canon Entities에 Depth·Visibility·Origin 속성이 있다. 이전 템플릿으로 만든 프로젝트는 [전환 절차](skills/notion-canon-manager/references/notion-template.md)를 따른다. 1.0.0에서는 `notion_plan.py upgrade`로 속성과 선택지를 추가만 하고, 1.1.0에서는 첫 동기화 때 요약 영역이 추가된다.
 
 템플릿은 실제 페이지 생성 요청에 본문과 스키마를 적용하는 방식이다. Notion의 템플릿 버튼이나 외부 백그라운드 서비스가 자동 설치되는 것은 아니다.
 
@@ -77,10 +87,11 @@ python3 -m unittest discover -s tests -v
 python3 skills/notion-canon-manager/scripts/canon.py --help
 python3 skills/notion-canon-manager/scripts/canon.py bible tests/fixtures/world_v2.json
 python3 skills/notion-canon-manager/scripts/canon.py timeline tests/fixtures/world_v2.json --character C1
+python3 skills/notion-canon-manager/scripts/canon.py page tests/fixtures/world_v2.json world
 python3 skills/notion-canon-manager/scripts/notion_plan.py --help
 ```
 
-`canon.py`는 구조·ID·참조·결정 출처·결말 도달 경로·변경 영향과 함께, 규칙 ID가 붙은 시간·공간·보존·명칭·세계관 정합성 규칙을 검사한다. `bible`과 `timeline`은 요일과 경과 기간을 계산한 세계 바이블과 시간선을 출력하고, `migrate`는 v1 스냅샷을 v2로 옮긴다. `notion_plan.py`는 현재 Notion MCP용 생성·갱신 요청과 템플릿 1.0.0 → 1.1.0 추가형 전환 요청(`upgrade`)을 출력한다. 요청 실행은 연결된 도구를 사용하는 에이전트가 담당한다. 이 스크립트는 토큰을 저장하거나 직접 네트워크를 호출하지 않는다.
+`canon.py`는 구조·ID·참조·결정 출처·결말 도달 경로·변경 영향과 함께, 규칙 ID가 붙은 시간·공간·보존·명칭·세계관 정합성 규칙을 검사한다. `bible`과 `timeline`은 요일과 경과 기간을 계산한 세계 바이블과 시간선을 출력하고, `migrate`는 v1 스냅샷을 v2로 옮긴다. `canon.py page`는 Notion 작업 페이지에 들어갈 Canon 요약을 Notion 문법으로 미리 보여 준다. `notion_plan.py`는 현재 Notion MCP용 생성·갱신 요청, 템플릿 추가형 전환 요청(`upgrade`), 작업 페이지 영역 교체 요청(`pages`)을 출력한다. 요청 실행은 연결된 도구를 사용하는 에이전트가 담당한다. 이 스크립트는 토큰을 저장하거나 직접 네트워크를 호출하지 않는다.
 
 테스트는 다음을 확인한다: 구조 검증, 결말 조건, 변경 파급, 규칙별 통과·실패 사례, v1 이관, 세계 바이블 출력, 템플릿 요청과 추가형 전환, 중복 방지, 충돌 감지, 메모 보존, 잘못된 입력에서의 안정성. `scripts/validate_suite.py`는 스킬 문서가 쓰는 필드명과 코드의 필드가 데이터 계약과 일치하는지도 검사한다. 실제 Notion 쓰기와 사용자 창작 워크숍의 품질 검증은 사용자가 연결 후 진행한다. 데모 게임은 포함하지 않는다. `tests/fixtures`의 작은 세계는 검사기 테스트용이다.
 
@@ -88,6 +99,6 @@ python3 skills/notion-canon-manager/scripts/notion_plan.py --help
 
 ## 완료 범위
 
-현재 버전(1.1.0)은 실제 사용할 기획서 제작 워크플로 전체를 제공한다. 변경 내역은 [CHANGELOG](CHANGELOG.md)에 있다. 메시지·보고서 본문 대량 생성, 실행 가능한 검색·해금 전체 그래프, 게임 UI·코드와 실제 플레이 검증은 후속 제작 범위다.
+현재 버전(1.2.0)은 실제 사용할 기획서 제작 워크플로 전체를 제공한다. 변경 내역은 [CHANGELOG](CHANGELOG.md)에 있다. 메시지·보고서 본문 대량 생성, 실행 가능한 검색·해금 전체 그래프, 게임 UI·코드와 실제 플레이 검증은 후속 제작 범위다.
 
 사용자 게임의 snapshot, 답변, Notion 연결 ID, 토큰은 이 공개 저장소에 자동 저장하지 않는다.

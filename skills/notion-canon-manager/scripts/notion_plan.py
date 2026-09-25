@@ -7,6 +7,8 @@ import sys
 import uuid
 from pathlib import Path
 import canon
+import canon_rules
+import canon_views
 ASSETS=Path(__file__).resolve().parents[1]/'assets'
 BLUE=json.loads((ASSETS/'notion-blueprint.json').read_text())
 TEMPLATES=json.loads((ASSETS/'page-templates.json').read_text())
@@ -117,8 +119,17 @@ def desired_records(s,reg,collection):
             out.append((obj,p))
     return out
 
+def version_tuple(text):return tuple(int(x) for x in str(text).split('.'))
+
+def require_template(reg,s):
+    # v2 kinds and world metadata need the 1.1.0 select options and properties in Notion.
+    uses_v2=any(e.get('kind') in canon.V2_KINDS or {'depth','visibility','origin'}&set(e) for e in s['entities'])
+    have=reg.get('template_version','1.0.0')
+    if uses_v2 and version_tuple(have)<(1,1,0):raise ValueError(f'Notion template {have} cannot store schema v2 entities; run notion_plan.py upgrade first and record template_version')
+
 def upsert(s,reg,remote,collection):
     if reg['project_id']!=s['project_id'] or reg['version_id']!=s['version_id']:raise ValueError('registry/snapshot scope mismatch')
+    require_template(reg,s)
     report=canon.validate(s)
     if report['errors']:raise ValueError('; '.join(report['errors']))
     if remote.get('complete') is not True:raise ValueError('remote lookup must be complete for all requested keys')
@@ -171,14 +182,68 @@ def upgrade(reg,current):
         if statements:out.append(request('upgrade/'+BLUE['template_version']+'/'+name,'notion_update_data_source',{'data_source_id':ds(reg,name),'statements':'; '.join(statements)}))
     return out
 
+# Work pages are split by fixed headings. Only generated regions are ever rewritten.
+REGIONS={'narrative':('## 해설','## Canon 요약'),'summary':('## Canon 요약','## User Notes')}
+PLACEHOLDERS={'아직 작성되지 않음.','아직 동기화되지 않음.'}
+
+def fingerprint(text):
+    # Notion normalizes whitespace, escapes and table markup on save; compare the words only.
+    t=re.sub(r'<[^>]*>','',text);t=re.sub(r'\{[^{}]*\}','',t);t=re.sub(r'[\s\\*_~`$\[\]|^#>-]','',t)
+    return canon.digest(t)
+
+def region(body,name):
+    start,end=REGIONS[name]
+    a=list(re.finditer('^'+re.escape(start)+r'[ \t]*$',body,re.M));b=list(re.finditer('^'+re.escape(end)+r'[ \t]*$',body,re.M))
+    if len(a)>1 or len(b)!=1:raise ValueError(f'page markers missing or duplicated: {start} / {end}')
+    if not a:return None
+    if a[0].start()>b[0].start():raise ValueError(f'page markers out of order: {start} / {end}')
+    return body[a[0].start():b[0].start()]
+
+def untouched(text):
+    lines=[x.strip() for x in text.split('\n') if x.strip()]
+    return all(x in PLACEHOLDERS or x.startswith('#') for x in lines)
+
+def pages(s,reg,bodies,narratives=None):
+    """Plan targeted rewrites of the generated page regions; never touch User Notes, views or child pages."""
+    if reg['project_id']!=s['project_id'] or reg['version_id']!=s['version_id']:raise ValueError('registry/snapshot scope mismatch')
+    report=canon.validate(s);ruled={canon_rules.describe(f) for f in report['findings']}
+    structural=[e for e in report['errors'] if e not in ruled]
+    if structural:raise ValueError('; '.join(structural))
+    narratives=narratives or {};known=reg.get('page_regions',{});out=[];conflicts=[];record={}
+    for page in canon_views.PAGES:
+        if not isinstance(bodies.get(page),str):raise ValueError('fetch the current body of page: '+page)
+        body=bodies[page];page_id=uid(reg['hub_page_id'] if page=='hub' else reg['pages'][page])
+        wanted={'summary':canon_views.page_summary(s,page,report)}
+        if isinstance(narratives.get(page),str):wanted['narrative']=narratives[page].strip()+'\n'
+        updates=[];marks={}
+        for name,text in wanted.items():
+            start,end=REGIONS[name];current=region(body,name);new=start+'\n'+text
+            if current is None:
+                if name=='narrative':conflicts.append({'page':page,'region':name,'reason':'page has no 해설 region; add the heading by hand or skip narrative'});continue
+                # Pages from template 1.1.0 have no summary region yet: insert it before User Notes.
+                updates.append({'old_str':end,'new_str':new+end});marks[name]=fingerprint(text);continue
+            have=fingerprint(current[len(start):]);want=fingerprint(text)
+            if have==want:marks[name]=want;continue
+            base=known.get(page,{}).get(name)
+            if not (have==base or (base is None and untouched(current[len(start):]))):
+                conflicts.append({'page':page,'region':name,'reason':'region was edited in Notion since the last sync; merge by hand'});continue
+            updates.append({'old_str':current,'new_str':new});marks[name]=want
+        if updates:out.append(request('page/'+page,'notion_update_page',{'page_id':page_id,'command':'update_content','content_updates':updates,'allow_async':False}))
+        if marks:record[page]={**marks,'revision':s['revision']}
+    return {'operations':out,'conflicts':conflicts,'record':{'page_regions':record}}
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);sp=p.add_subparsers(dest='cmd',required=True)
     b=sp.add_parser('bootstrap');b.add_argument('registry');b.add_argument('--phase',required=True,choices=['root','pages','databases','relations','version','views'])
+    pg=sp.add_parser('pages');pg.add_argument('snapshot');pg.add_argument('registry');pg.add_argument('bodies');pg.add_argument('--narratives')
     g=sp.add_parser('upgrade');g.add_argument('registry');g.add_argument('schema')
     u=sp.add_parser('upsert');u.add_argument('snapshot');u.add_argument('registry');u.add_argument('remote');u.add_argument('--collection',required=True,choices=['entities','links','decisions','issues','sessions','versions'])
     a=p.parse_args();reg=canon.read(a.registry)
     if a.cmd=='bootstrap':out=bootstrap(reg,a.phase)
     elif a.cmd=='upgrade':out=upgrade(reg,canon.read(a.schema))
+    elif a.cmd=='pages':
+        plan=pages(canon.read(a.snapshot),reg,canon.read(a.bodies),canon.read(a.narratives) if a.narratives else None)
+        print(json.dumps({'executed':False,**plan},ensure_ascii=False,indent=2));return
     else:out=upsert(canon.read(a.snapshot),reg,canon.read(a.remote),a.collection)
     print(json.dumps({'executed':False,'operations':out},ensure_ascii=False,indent=2))
 if __name__=='__main__':

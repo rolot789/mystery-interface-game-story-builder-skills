@@ -52,7 +52,7 @@ update_page가 async task를 반환하면 성공 상태까지 조회한 뒤 종�
 
 ## 4. 문서 조립과 완료
 
-각 작업 페이지의 서술형 요약은 해당 버전의 정본을 바탕으로 다시 쓴다. User Notes와 기존 링크·자식 블록은 보존한다. 최종 기획서는 design-document.md를 사용하고 실제 Notion에 만들 때 문서 제목은 properties.title에만 둔다.
+각 작업 페이지의 `## Canon 요약`은 `notion_plan.py pages`로 다시 쓰고, `## 해설`은 에이전트가 정본을 바탕으로 새로 쓴 서술을 같은 명령의 --narratives로 넘긴다. 영역 구성과 충돌 판단은 [Notion 템플릿](notion-template.md)의 작업 페이지 구성을 따른다. User Notes와 기존 링크·자식 블록은 보존한다. 도메인 행을 모두 반영한 뒤에 페이지 요약을 갱신한다. 최종 기획서는 design-document.md를 사용하고 실제 Notion에 만들 때 문서 제목은 properties.title에만 둔다.
 
 자동 재생성 중 새로운 설정을 추가하지 않는다. 확정되지 않은 제안, 관련 객체의 리비전, 남은 이슈를 표시한다. Hub에 마지막 성공 리비전과 다음 질문을 남긴다. Notion 미연결이면 로컬 초안과 저장 대기 상태를 전달하고 연결 성공을 주장하지 않는다.
 
