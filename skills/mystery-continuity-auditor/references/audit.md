@@ -16,7 +16,7 @@
 
 BLOCKER: 핵심 사건이나 필수 결말이 성립하지 않음, 과거 진상 모순, 핵심 정보 경로 불가능. MAJOR: 중요한 인과·동기·근거가 부족하나 설계 수정으로 해결 가능. MINOR: 주변 표기·세부 설명 문제.
 
-자동 검사 오류가 TIME-002처럼 규칙 ID로 시작하면 violated_rule에 그 ID를 그대로 적는다.
+자동 검사 규칙의 전체 목록은 `notion-canon-manager`의 `references/data-contract.md` 규칙 목록을 따른다. validate의 findings는 규칙 ID와 대상 ID를 가지므로 violated_rule과 affected_ids에 그대로 적는다. WARNING은 자동으로 이슈가 되지 않는다. 검토해서 실제 문제일 때만 이슈로 만든다.
 
 이슈에는 title, severity, affected_ids, evidence, violated_rule, suggested_fix, status를 기록한다. 자동 검사 결과와 의미 검토 결과를 별도 evidence로 남긴다. 수정 후 해당 이슈와 영향 범위를 재검토한다.
 

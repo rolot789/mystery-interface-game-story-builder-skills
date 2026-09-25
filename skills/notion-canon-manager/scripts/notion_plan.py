@@ -18,6 +18,20 @@ def request(key,tool,args):return {'operation_key':key,'tool':tool,'arguments':a
 def key(reg,id_):return '/'.join([reg['project_id'],reg['version_id'],id_])
 def wrap(reg,id_,title,data,revision=0):return {'id':id_,'project_id':reg['project_id'],'version_id':reg['version_id'],'title':title,'revision':revision,'data':data}
 
+def event_time(value):
+    # Exact times keep the v1 property shape; uncertain ranges use start/end.
+    if isinstance(value,str):return {'date:Event Time:start':value,'date:Event Time:is_datetime':1}
+    if isinstance(value,dict):
+        start=value.get('earliest') or value.get('latest');p={'date:Event Time:start':start,'date:Event Time:is_datetime':1}
+        if value.get('earliest') and value.get('latest'):p['date:Event Time:end']=value['latest']
+        return p
+    return {}
+
+def version_data(s):
+    data={'initial_state':s['initial_state'],'pending_decisions':s.get('pending_decisions',[])}
+    if 'charter' in s:data['charter']=s['charter']
+    return data
+
 def bootstrap(reg,phase):
     out=[];pages=reg.get('pages',{});sources=reg.get('data_sources',{})
     if phase=='root':
@@ -66,11 +80,12 @@ def desired_records(s,reg,collection):
         return [uid(entity_pages[x]) for x in ids]
     if collection=='entities':
         for e in s['entities']:
-            p={'Name':e['title'],'Key':key(reg,e['id']),'Entity ID':e['id'],'Kind':e['kind'],'Version':v,'Canon':e['status'],'Review':e['review'],'Owner':e['owner'],'Summary':e['data'].get('statement',e['data'].get('summary',e['data'].get('purpose',e['title'])))[:1000]}
-            if e['kind']=='Event' and e['data'].get('at'):p.update({'date:Event Time:start':e['data']['at'],'date:Event Time:is_datetime':1})
+            d=e['data'];summary=next((d[k] for k in ['statement','summary','purpose','description','definition'] if isinstance(d.get(k),str)),e['title'])
+            p={'Name':e['title'],'Key':key(reg,e['id']),'Entity ID':e['id'],'Kind':e['kind'],'Version':v,'Canon':e['status'],'Review':e['review'],'Owner':e['owner'],'Summary':summary[:1000]}
+            if e['kind'] in {'Event','HistoryEvent'}:p.update(event_time(d.get('at')))
             out.append((e,p))
     elif collection=='versions':
-        obj=wrap(reg,'VERSION',reg['version_id'],{'initial_state':s['initial_state'],'pending_decisions':s.get('pending_decisions',[])},s['revision'])
+        obj=wrap(reg,'VERSION',reg['version_id'],version_data(s),s['revision'])
         out.append((obj,{'Name':reg['version_id'],'Key':key(reg,'VERSION'),'Version ID':reg['version_id'],'Current Revision':s['revision'],'Status':'ACTIVE'}))
     elif collection=='sessions':
         sess=s.get('session',{})

@@ -4,6 +4,16 @@
 - 초점: **Mystery World Builder**를 주변 세계관까지 세밀하되 모순 없이 설계하는 전문가 수준 스킬로 강화하고, 나머지 스킬·도구·패키지의 개선점을 함께 정리한다.
 - 작성일: 2026-09-24
 
+> **진행 상황**
+>
+> - Phase 0: 완료
+> - Phase 1: 완료
+> - Phase 2: 완료. 계획과 달라진 점이 있다.
+>   - 이동 시간 경고를 SPACE-003으로 분리했다.
+>   - knows 링크 경고를 LINK-001로 추가했다.
+>   - Trace에 state_at_present와 retention_exception을 추가했다.
+> - Phase 3~5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
+
 ---
 
 ## 0. 요약

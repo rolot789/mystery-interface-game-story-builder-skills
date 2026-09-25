@@ -60,12 +60,13 @@ Python 3 표준 라이브러리만 사용한다.
 python3 scripts/validate_suite.py
 python3 -m unittest discover -s tests -v
 python3 skills/notion-canon-manager/scripts/canon.py --help
+python3 skills/notion-canon-manager/scripts/canon.py bible tests/fixtures/world_v2.json
 python3 skills/notion-canon-manager/scripts/notion_plan.py --help
 ```
 
-`canon.py`는 구조·ID·참조·결정 출처·결말 도달 경로·변경 영향을 검사한다. `notion_plan.py`는 현재 Notion MCP용 생성·갱신 요청을 출력한다. 요청 실행은 연결된 도구를 사용하는 에이전트가 담당한다. 이 스크립트는 토큰을 저장하거나 직접 네트워크를 호출하지 않는다.
+`canon.py`는 구조·ID·참조·결정 출처·결말 도달 경로·변경 영향과 함께, 규칙 ID가 붙은 시간·공간·보존·명칭·세계관 정합성 규칙을 검사한다. `bible`과 `timeline`은 요일과 경과 기간을 계산한 세계 바이블과 시간선을 출력하고, `migrate`는 v1 스냅샷을 v2로 옮긴다. `notion_plan.py`는 현재 Notion MCP용 생성·갱신 요청을 출력한다. 요청 실행은 연결된 도구를 사용하는 에이전트가 담당한다. 이 스크립트는 토큰을 저장하거나 직접 네트워크를 호출하지 않는다.
 
-테스트는 구조 검증, 결말 조건, 변경 파급, 템플릿 요청, 중복 방지, 충돌 감지, 메모 보존을 확인한다. 실제 Notion 쓰기와 사용자 창작 워크숍의 품질 검증은 사용자가 연결 후 진행한다. 데모 게임은 포함하지 않는다.
+테스트는 구조 검증, 결말 조건, 변경 파급, 템플릿 요청, 중복 방지, 충돌 감지, 메모 보존을 확인한다. 실제 Notion 쓰기와 사용자 창작 워크숍의 품질 검증은 사용자가 연결 후 진행한다. 데모 게임은 포함하지 않는다. `tests/fixtures`의 작은 세계는 검사기 테스트용이다.
 
 ## 완료 범위
 

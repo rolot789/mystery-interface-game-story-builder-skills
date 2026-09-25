@@ -49,19 +49,24 @@ WorldRule·Organization·Service 객체와 관련 관계를 소유한다. 인물
 - **소속.** 조직의 직위와 권한 구조는 World Builder가 쓴다. 특정 인물의 소속과 재직 기간은 Character Builder에 요청한다.
 - **파급.** 기존 규칙을 바꾸면 영향받는 사건·기록·접근·지식 제한을 대상 ID와 함께 표시한다.
 
-## 현재 저장 방식 (Canon schema v1)
+## 저장 위치 (Canon schema v2)
 
-schema v1에는 장소·역사·용어 전용 객체와 구조화 필드가 아직 없다. 다음 고정 형식으로 기록하라. 같은 형식을 지켜야 이후 schema 전환 때 자동으로 옮길 수 있다.
+고정점은 서술이 아니라 구조화 필드에 적는다. 필드 형식은 `notion-canon-manager`의 `references/data-contract.md`를 따른다.
 
-| 개념 | v1 저장 위치와 형식 |
+| 개념 | 저장 위치 |
 |---|---|
-| 헌장 | WorldRule 1개, 제목 `헌장: 프로젝트명`. statement=핵심 전제와 톤, scope=포함·제외 범위와 조사 현재 시점, exceptions=표현 금기, grounding=현실 거리와 검증 근거 |
-| 장소 | WorldRule, 제목 `장소: 이름`. statement=묘사와 출입 조건, scope=`상위: 장소명 / 연결: 장소명 도보 10분`, exceptions=출입 예외, grounding=생활 리듬 |
-| 용어 | WorldRule, 제목 `용어: 표기`. statement=정의, scope=사용 집단과 어조, exceptions=`허용 별칭: …`, grounding=`금지 별칭: …` |
-| 역사 | 관련 WorldRule·Organization의 grounding 또는 culture에 `[연표] 시기 | 사건 | 현재에 남은 흔적` 한 줄씩 |
-| 밀도·공개도·출처 | 첫 텍스트 필드의 첫 줄에 `[CORE·INSIDER·FOUNDATION]` 형식 태그. PLOT_NEED는 다음 줄에 `세계 내 근거: …` |
-| 보존 규칙 | Service.data_lifecycle에 `보존: 데이터 | 기간 | 만료 후 처리 | 예외` 한 줄씩 |
-| 접근 권한 | Service.permissions에 `권한: 역할 | 데이터 | 읽기·수정·삭제·복원·내보내기 중 허용 | 조건` 한 줄씩 |
+| 헌장 | snapshot의 charter. 조사 현재 시점은 charter.present_at |
+| 시각 | TimeSpec. 정확한 시각, 불확실 구간 `{earliest, latest, label}`, 또는 null |
+| 장소 | Location. parent_id로 계층, connections로 이동 시간 |
+| 역사 | HistoryEvent. summary(실제), public_account(통념), legacy_ids(현재 흔적) |
+| 용어 | Term. aliases, forbidden_aliases, refers_to |
+| 밀도·공개도·출처 | entity의 depth, visibility, origin, in_world_reason |
+| 규칙의 유형·강도·유효 기간·집행자 | WorldRule의 rule_type, strength, valid_from, valid_until, enforced_by |
+| 조직의 설립·구조·보상·본거지 | Organization의 founded_at, structure, incentives, hq_location_id 등 |
+| 보존·권한·기록 유형 | Service의 retention, access_policy, artifacts, launched_at, changes |
+| 2차 파급, 허점 | entails 링크(규칙 → 파급), exploits 링크(사건 → 규칙·서비스, reason에 정당화) |
+
+설계를 마치거나 고정점을 바꾸면 `canon.py validate`로 규칙 ID별 결과를 확인한다. 연표·장소·보존 규칙을 읽기 좋게 보려면 `canon.py bible`을 쓰고, 요일과 경과 기간은 그 출력에서 인용한다. v1 프로젝트는 `canon.py migrate`로 옮긴 뒤 MIGRATION 이슈를 사용자와 확인한다.
 
 ## 출력 형식
 

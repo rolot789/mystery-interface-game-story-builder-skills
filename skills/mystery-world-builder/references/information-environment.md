@@ -35,14 +35,24 @@
 
 ## 기록 형식
 
-schema v1에서는 Service 텍스트 필드에 다음 형식으로 한 줄씩 쓴다.
+보존·권한·기록 유형은 Service의 구조화 필드에 적는다. 영구 보존은 keep_days와 after를 null로 둔다.
 
+```json
+"launched_at": "2018-05-01T09:00:00+09:00",
+"retention": [
+  {"data": "message", "keep_days": 30, "after": "HARD_DELETE", "exceptions": "법적 보존 요청 시 1년"},
+  {"data": "deleted_marker", "keep_days": null, "after": null}
+],
+"access_policy": [
+  {"role": "방 관리자", "data": "message", "ops": ["read", "delete"], "condition": "방 설정에서 허용한 경우"},
+  {"role": "고객 지원", "data": "message", "ops": ["read"], "condition": "신고 접수 후 14일"}
+],
+"artifacts": [
+  {"type": "message", "timestamp_source": "서버 시각", "edit_trace": "수정됨 표시", "delete_trace": "삭제된 메시지 표시", "read_receipt": "숫자 표시"}
+]
 ```
-보존: 메시지 | 30일 | 영구 삭제 | 법적 보존 요청 시 1년
-보존: 삭제된 메시지 표시 | 영구 | 해당 없음 | 없음
-권한: 방 관리자 | 단체방 메시지 | 읽기·삭제 | 방 설정에서 허용한 경우
-권한: 고객 지원 | 신고된 메시지 | 읽기 | 신고 접수 후 14일
-```
+
+게임에 나오는 기록(Trace)에는 service_id와 artifact_type을 적는다. 그러면 검사기가 보존 기간(DATA-001), 선언되지 않은 기록 유형(DATA-002), 출시 전 기록(TIME-005)을 확인한다. 조사 현재 시점에 이미 지워진 기록은 state_at_present를 DELETED로, 예외적으로 남은 기록은 retention_exception에 사유를 적는다.
 
 ## 흔한 모순 함정
 
