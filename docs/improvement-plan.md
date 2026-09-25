@@ -12,7 +12,10 @@
 >   - 이동 시간 경고를 SPACE-003으로 분리했다.
 >   - knows 링크 경고를 LINK-001로 추가했다.
 >   - Trace에 state_at_present와 retention_exception을 추가했다.
-> - Phase 3~5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
+> - Phase 3: 완료. 인물·사건·감사·진행자 스킬이 v2 필드와 규칙 ID를 쓰도록 바꿨다.
+>   - 인물 스킬에 프로필과 말투 참조 문서를 추가했다.
+>   - validate_suite가 문서의 필드명을 데이터 계약과 양방향으로 대조한다.
+> - Phase 4~5: 남음. 정확한 규칙 목록은 `skills/notion-canon-manager/references/data-contract.md`를 따른다.
 
 ---
 

@@ -109,7 +109,7 @@ Decision은 id, question, answer, status, rationale, affected_ids를 갖는다. 
 
 QA Issue는 id, title, severity(BLOCKER / MAJOR / MINOR), affected_ids, evidence, violated_rule, suggested_fix, status(OPEN / RESOLVED / ACCEPTED)를 갖는다. 자동 검사에서 나온 이슈는 violated_rule에 규칙 ID를 적는다. BLOCKER를 ACCEPTED로 바꿔 완료 검사를 우회하지 않는다.
 
-Session은 id, title, phase, last_question, options, answer, pending_decisions, next_question, next_question_reason, canon_revision, sync_state를 갖는다. 전체 응답이나 식별 가능한 개인정보를 공개 GitHub에 자동 저장하지 않는다. 게임 데이터는 해당 사용자의 Notion에 저장한다.
+Session은 id, title, phase, last_question, options, answer, pending_decisions, next_question, next_question_reason, canon_revision, sync_state와 선택적 last_check(검토한 리비전과 남은 ERROR 규칙 ID)를 갖는다. 전체 응답이나 식별 가능한 개인정보를 공개 GitHub에 자동 저장하지 않는다. 게임 데이터는 해당 사용자의 Notion에 저장한다.
 
 ## 5. 리비전과 검사
 

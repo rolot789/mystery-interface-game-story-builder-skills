@@ -26,5 +26,22 @@ for name in manifest['skills']:
     # The shared contract is copied so each skill installs alone; copies must not drift.
     if '\n## 공통 계약\n' in text:contracts[name]=text.split('\n## 공통 계약\n',1)[1].strip()
 if len(set(contracts.values()))>1:errors.append('common contract drift: '+', '.join(sorted(contracts)))
+# Field names must agree between code, the data contract and the domain skills' docs.
+manager=root/'skills'/'notion-canon-manager'
+contract_path=manager/'references'/'data-contract.md'
+if contract_path.exists():
+    sys.path.insert(0,str(manager/'scripts'))
+    import canon
+    contract=contract_path.read_text()
+    fields=set(canon.TIME_KEYS)|{k for v in canon.TEXT.values() for k in v}|{k for v in canon.OPTIONAL_TEXT.values() for k in v}|{k for v in canon.REFS.values() for k in v}|{k for v in canon.DATA_ENUMS.values() for k in v}
+    for (kind,key),spec in canon.ITEMS.items():fields|={key,*(spec or {})}
+    for field in sorted(fields):
+        if not re.search(r'(?<![A-Za-z0-9_])'+re.escape(field)+r'(?![A-Za-z0-9_])',contract):errors.append('data contract does not document field '+field)
+    snake=re.compile(r'(?<![A-Za-z0-9_./-])([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?![A-Za-z0-9_(-])')
+    not_fields={'deleted_marker','needs_review'}  # an example data value and an impact output key
+    for md in (root/'skills').rglob('*.md'):
+        if manager in md.parents:continue
+        for token in sorted(set(snake.findall(md.read_text()))-not_fields):
+            if not re.search(r'(?<![A-Za-z0-9_])'+token+r'(?![A-Za-z0-9_])',contract):errors.append(f'{md.relative_to(root)} names field {token} missing from data contract')
 print('\n'.join(errors) if errors else f"Validated {len(manifest['skills'])} skills and local resources")
 sys.exit(bool(errors))
