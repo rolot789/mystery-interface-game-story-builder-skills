@@ -1,4 +1,4 @@
 interface:
   display_name: "Mystery World Builder"
-  short_description: "사건 밖의 운영과 일상까지 갖춘 독립 미스터리 세계관을 설계한다"
-  default_prompt: "$mystery-world-builder 현재 미스터리 프로젝트에서 담당 영역을 설계하고 기록해줘."
+  short_description: "독립 세계관을 헌장부터 정보 환경·생활까지 층별로 설계하고 모순을 점검한다"
+  default_prompt: "$mystery-world-builder 현재 미스터리 프로젝트의 세계관을 층별로 설계하고 설정 간 정합성을 점검해줘."

@@ -14,7 +14,7 @@ STATUSES = {'DRAFT','PROPOSED','CONFIRMED','SUPERSEDED','REJECTED'}
 REVIEWS = {'NOT_CHECKED','VALID','NEEDS_REVIEW','BLOCKED'}
 OWNERS = {**dict.fromkeys(['WorldRule','Organization','Service'],'mystery-world-builder'), **dict.fromkeys(['Character','Knowledge','Claim'],'character-knowledge-builder'), **dict.fromkeys(['Event','Fact','Trace','Choice','Ending'],'mystery-plot-builder')}
 TEXT = {'WorldRule':['statement','scope','exceptions','grounding'], 'Organization':['purpose','economy','operations','culture','daily_life'], 'Service':['purpose','users','normal_use','data_lifecycle','permissions','failures'], 'Character':['identity','motive','daily_life','relationships'], 'Event':['action','result'], 'Fact':['statement','basis'], 'Claim':['statement','audience','intent'], 'Knowledge':['state'], 'Trace':['origin_type','summary','access','distortion'], 'Choice':['prompt','known_information'], 'Ending':['consequences']}
-REFS = {'Service':{'provider_id':{'Organization'}}, 'Event':{'actors':{'Character','Organization','Service'},'preconditions':{'Event','Fact','WorldRule'}}, 'Fact':{'event_id':{'Event'},'world_rule_id':{'WorldRule'}}, 'Claim':{'speaker_id':{'Character','Organization','Service'}}, 'Knowledge':{'character_id':{'Character'},'fact_id':{'Fact'},'acquired_via':{'Event','Trace','Claim'}}, 'Trace':{'origin_ids':{'Event','WorldRule','Service'},'author_id':{'Character','Organization','Service'}}}
+REFS = {'Service':{'provider_id':{'Organization'}}, 'Event':{'actors':{'Character','Organization','Service'},'preconditions':{'Event','Fact','WorldRule'}}, 'Fact':{'event_id':{'Event'},'world_rule_id':{'WorldRule'}}, 'Claim':{'speaker_id':{'Character','Organization','Service'},'fact_ids':{'Fact'}}, 'Knowledge':{'character_id':{'Character'},'fact_id':{'Fact'},'acquired_via':{'Event','Trace','Claim'}}, 'Trace':{'origin_ids':{'Event','WorldRule','Service'},'author_id':{'Character','Organization','Service'}}}
 LINKS = {'supports':({'Trace'},{'Fact','Claim'}), 'contradicts':({'Trace'},{'Fact','Claim'}), 'generates':({'Event','Service'},{'Trace'}), 'knows':({'Character'},{'Fact'}), 'depends_on':(KINDS,KINDS), 'related':(KINDS,KINDS)}
 BEGIN='## Canon Managed Data'
 END='## User Notes'
@@ -24,11 +24,33 @@ def digest(x): return hashlib.sha256(canonical(x).encode()).hexdigest()
 def read(path): return json.loads(Path(path).read_text())
 def integer(x): return type(x) is int and x >= 0
 def scalar(x): return type(x) in (str,int,float,bool) and (not isinstance(x,float) or abs(x)!=float('inf'))
+TIME_KEY = {'Event':'at','Trace':'created_at','Claim':'stated_at'}
 def stamp(s):
     if s is None: return None
     d=datetime.fromisoformat(s.replace('Z','+00:00'))
     if d.tzinfo is None: raise ValueError('timestamp requires timezone')
     return d
+
+def when(e):
+    if not isinstance(e,dict) or not isinstance(e.get('data'),dict):return None
+    try:return stamp(e['data'].get(TIME_KEY.get(e.get('kind'),'')))
+    except (TypeError,ValueError,AttributeError):return None
+
+def ids(v):return [x for x in v if isinstance(x,str)] if isinstance(v,list) else []
+
+def cycles(index):
+    graph={k:[x for x in ids(e.get('depends_on'))+ids((e.get('data') if isinstance(e.get('data'),dict) else {}).get('preconditions')) if x in index] for k,e in index.items()}
+    color={};found=[]
+    for start in graph:
+        if start in color:continue
+        stack=[(start,iter(graph[start]))];path=[start];color[start]=1
+        while stack:
+            node,it=stack[-1];nxt=next(it,None)
+            if nxt is None:
+                stack.pop();path.pop();color[node]=2;continue
+            if color.get(nxt)==1:found.append(path[path.index(nxt):]+[nxt])
+            elif nxt not in color:color[nxt]=1;path.append(nxt);stack.append((nxt,iter(graph[nxt])))
+    return found
 
 def condition(c,state):
     if type(c) is bool:return c
@@ -155,15 +177,31 @@ def validate(s,complete=False):
             elif e.get('status') not in {'SUPERSEDED','REJECTED'} and index[ref].get('status') in {'SUPERSEDED','REJECTED'}:fail(f'{eid}: active reference to inactive {ref}')
         for key,allowed in REFS.get(e.get('kind'),{}).items():
             val=e['data'].get(key)
-            if key in {'actors','preconditions','acquired_via','origin_ids'} and val is not None and not isinstance(val,list):fail(f'{eid}: {key} must be list')
+            if key in {'actors','preconditions','acquired_via','origin_ids','fact_ids'} and val is not None and not isinstance(val,list):fail(f'{eid}: {key} must be list')
             if val is None:continue
             vals=val if isinstance(val,list) else [val]
             if any(not isinstance(x,str) or x not in index or index[x]['kind'] not in allowed for x in vals):fail(f'{eid}: wrong reference type {key}')
         required_refs={'Service':['provider_id'],'Event':['actors','preconditions'],'Claim':['speaker_id'],'Knowledge':['character_id','fact_id','acquired_via'],'Trace':['origin_ids']}.get(e['kind'],[])
         for key in required_refs:
             if key not in e['data']:fail(f'{eid}: missing {key}')
+    for cycle in cycles(index):fail('GRAPH-001 dependency cycle: '+' -> '.join(cycle))
+    for eid,e in index.items():
+        d=e.get('data') if isinstance(e.get('data'),dict) else {};t=when(e)
+        if e.get('kind')=='Event' and t:
+            for ref in ids(d.get('preconditions')):
+                pt=when(index.get(ref)) if index.get(ref,{}).get('kind')=='Event' else None
+                if pt and pt>t:fail(f'TIME-002 {eid}: precondition {ref} occurs after the event')
+        if e.get('kind')=='Trace' and t:
+            starts=[x for x in (when(index[r]) for r in ids(d.get('origin_ids')) if r in index and index[r].get('kind')=='Event') if x]
+            if starts and t<min(starts):fail(f'TIME-003 {eid}: trace created before its origin event')
+        if e.get('kind')=='Knowledge':
+            try:start=stamp(d.get('from'))
+            except (TypeError,ValueError,AttributeError):start=None
+            sources=[x for x in (when(index.get(r)) for r in ids(d.get('acquired_via'))) if x]
+            if start and sources and start<min(sources):fail(f'TIME-004 {eid}: knowledge starts before any acquisition source exists')
     for link in ls:
         if not isinstance(link,dict):continue
+        if link.get('kind')=='knows':warnings.append('knows link is deprecated; record a Knowledge entity instead: '+str(link.get('id')))
         a=index.get(link.get('source'));b=index.get(link.get('target'));kind=link.get('kind')
         if kind not in LINKS or not a or not b:fail('invalid/dangling link: '+str(link.get('id')));continue
         sa,tb=LINKS[kind]
@@ -205,6 +243,8 @@ def impact(s,ids):
         a,b=link['source'],link['target']
         if link['kind']=='depends_on':a,b=b,a
         if a in graph:graph[a].add(b)
+        # Evidence must be re-read when the claim or fact it bears on changes.
+        if link['kind'] in {'supports','contradicts'} and b in graph:graph[b].add(a)
     seen=set(ids);queue=list(ids)
     while queue:
         for target in graph.get(queue.pop(0),set()):

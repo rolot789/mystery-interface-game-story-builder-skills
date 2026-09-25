@@ -1,4 +1,4 @@
 interface:
   display_name: "Mystery Continuity Auditor"
   short_description: "미스터리의 인과·지식·근거·결말 모순과 변경 영향을 검토한다"
-  default_prompt: "$mystery-continuity-auditor 현재 미스터리 프로젝트에서 담당 영역을 설계하고 기록해줘."
+  default_prompt: "$mystery-continuity-auditor 현재 미스터리 기획의 모순과 변경 영향을 검토하고 QA 이슈로 정리해줘."

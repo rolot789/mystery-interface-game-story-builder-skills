@@ -33,8 +33,8 @@ status는 DRAFT / PROPOSED / CONFIRMED / SUPERSEDED / REJECTED, review는 NOT_CH
 | Character | identity, motive, daily_life, relationships | character-knowledge-builder |
 | Event | at(null 또는 시간대 포함 ISO 시각), actors(ID 배열), preconditions(ID 배열), action, result | mystery-plot-builder |
 | Fact | statement, basis, 선택적 event_id 또는 world_rule_id | mystery-plot-builder |
-| Claim | statement, speaker_id, audience, stated_at, intent | character-knowledge-builder |
-| Knowledge | character_id, fact_id, state, from, until, acquired_via(ID 배열), 필요 시 initial_basis | character-knowledge-builder |
+| Claim | statement, speaker_id, audience, stated_at, intent, 선택적 fact_ids(관련 Fact ID 배열) | character-knowledge-builder |
+| Knowledge | character_id, fact_id, state, from, until, acquired_via(ID 배열), 필요 시 initial_basis, 선택적 cannot_know(시간·경로·권한 제한과 예외) | character-knowledge-builder |
 | Trace | origin_type, origin_ids(ID 배열), summary, access, distortion, created_at, 선택적 author_id | mystery-plot-builder |
 | Choice | prompt, known_information, available_when, options | mystery-plot-builder |
 | Ending | condition, consequences, witness, exclusive | mystery-plot-builder |
@@ -45,7 +45,7 @@ Choice options는 각 id, label, condition, effects를 갖는다. effects는 선
 
 ## 3. 관계와 결정
 
-Link는 id, kind, source, target, reason을 갖는다. supports / contradicts는 Trace에서 Fact·Claim으로 향한다. generates는 Event·Service에서 Trace로 향한다. depends_on은 의존하는 객체에서 필요한 객체로 향한다. related는 관련 설명용이다. 이유 없이 링크만 연결하지 않는다.
+Link는 id, kind, source, target, reason을 갖는다. supports / contradicts는 Trace에서 Fact·Claim으로 향하며, 대상이 바뀌면 근거 Trace도 재검토 대상이 된다. generates는 Event·Service에서 Trace로 향한다. depends_on은 의존하는 객체에서 필요한 객체로 향한다. related는 관련 설명용이다. 이유 없이 링크만 연결하지 않는다. knows 링크는 폐지 예정이며 경고만 낸다. 인물의 앎은 Knowledge 객체 하나로만 기록한다.
 
 Decision은 id, question, answer, status, rationale, affected_ids를 갖는다. 확정된 사용자 원문 답변과 선택의 범위를 보존한다. 도출 제약은 entailed, 추가 가정은 proposed로 본문에 구별한다. 선택 한 번을 근거로 관계없는 설정까지 확정하지 않는다.
 
@@ -63,5 +63,14 @@ python3 scripts/canon.py impact snapshot.json ENTITY-ID
 python3 scripts/canon.py render snapshot.json ENTITY-ID
 python3 scripts/canon.py validate snapshot.json --complete
 ```
+
+validate는 구조 외에 다음 시간·인과 규칙을 검사하고 오류 앞에 규칙 ID를 붙인다. 시각이 null인 객체는 비교하지 않는다.
+
+| 규칙 | 내용 |
+|---|---|
+| TIME-002 | 선행 조건 Event의 시각은 후행 Event 시각보다 늦을 수 없다 |
+| TIME-003 | Trace.created_at은 원인 Event 중 가장 이른 시각보다 이를 수 없다 |
+| TIME-004 | Knowledge.from은 획득 경로(Event·Trace·Claim) 중 가장 이른 시각보다 이를 수 없다 |
+| GRAPH-001 | depends_on·preconditions에 순환이 없다 |
 
 --complete는 필수 종류, 확정·검토 상태, 결말 witness, 열린 차단 이슈와 미정 목록을 검사한다. 주변 미정은 명시적으로 보류 목록으로 분리할 수 있다. 스키마 검증과 서사 검토를 함께 해야 완료로 판정할 수 있다. 별도 시뮬레이터 없이 모든 경로를 검증했다고 보고하지 않는다.

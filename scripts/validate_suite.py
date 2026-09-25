@@ -6,7 +6,7 @@ import re
 import sys
 root=Path(__file__).resolve().parents[1]
 manifest=json.loads((root/'suite.json').read_text())
-errors=[]
+errors=[];contracts={}
 for name in manifest['skills']:
     folder=root/'skills'/name;p=folder/'SKILL.md'
     if not p.exists():errors.append('missing skill '+name);continue
@@ -21,6 +21,10 @@ for name in manifest['skills']:
     for js in folder.rglob('*.json'):
         try:json.loads(js.read_text())
         except ValueError:errors.append('invalid JSON '+str(js))
-    if re.search(r'\bTODO\b|\[TODO',text):errors.append('unfinished scaffold '+name)
+    for md in [p,*folder.rglob('references/*.md'),*folder.rglob('assets/*.md')]:
+        if re.search(r'\bTODO\b|\[TODO',md.read_text()):errors.append('unfinished scaffold '+str(md.relative_to(root)))
+    # The shared contract is copied so each skill installs alone; copies must not drift.
+    if '\n## 공통 계약\n' in text:contracts[name]=text.split('\n## 공통 계약\n',1)[1].strip()
+if len(set(contracts.values()))>1:errors.append('common contract drift: '+', '.join(sorted(contracts)))
 print('\n'.join(errors) if errors else f"Validated {len(manifest['skills'])} skills and local resources")
 sys.exit(bool(errors))
