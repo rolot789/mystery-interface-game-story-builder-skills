@@ -16,7 +16,7 @@ Notion 연결은 사용자가 제공한다. 연결과 대상 페이지가 주어
 |---|---|
 | [Mystery Production Orchestrator](skills/mystery-production-orchestrator/SKILL.md) | 질문·라우팅·결정·재개·기획 완료 진행 |
 | [Mystery Plot Builder](skills/mystery-plot-builder/SKILL.md) | 진상·시간선·조사 개요·선택과 결말 |
-| [Mystery World Builder](skills/mystery-world-builder/SKILL.md) | 사회·역사·운영·문화·서비스·일상 |
+| [Mystery World Builder](skills/mystery-world-builder/SKILL.md) | 헌장·연표·장소·제도·정보 환경·생활을 층별로 설계하고 설정 간 모순 점검 |
 | [Character Knowledge Builder](skills/character-knowledge-builder/SKILL.md) | 인물·관계·동기·시점별 지식과 주장 |
 | [Mystery Continuity Auditor](skills/mystery-continuity-auditor/SKILL.md) | 인과·정보·세계 규칙·근거·결말 검토 |
 | [Notion Canon Manager](skills/notion-canon-manager/SKILL.md) | 템플릿 적용·Canon 동기화·기획서 조립 |
